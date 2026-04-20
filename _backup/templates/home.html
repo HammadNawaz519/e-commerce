@@ -1,0 +1,1366 @@
+<style>
+  /* ====== IG-STYLE FEED ====== */
+  .ig-feed-wrap {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0
+  }
+
+  /* --- Story Bar (top) --- */
+  .ig-story-bar {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(225, 217, 188, .35);
+    background: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .ig-story-bar::-webkit-scrollbar {
+    display: none
+  }
+
+  .ig-story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative
+  }
+
+  .ig-story-ring {
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    padding: 3px;
+    background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .2s;
+  }
+
+  .ig-story-ring:active {
+    transform: scale(.92)
+  }
+
+  .ig-story-item.is-mine .ig-story-ring {
+    background: linear-gradient(135deg, #4ADE80, #22C55E)
+  }
+
+  .ig-story-item.no-story .ig-story-ring {
+    background: var(--glass-border)
+  }
+
+  .ig-story-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--white);
+    background: var(--ivory);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .9rem;
+    color: var(--charcoal);
+  }
+
+  .ig-story-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-story-name {
+    font-size: .65rem;
+    font-weight: 600;
+    color: var(--muted);
+    max-width: 64px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+  }
+
+  .ig-story-add {
+    position: absolute;
+    bottom: 14px;
+    right: -2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--charcoal);
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--white);
+  }
+
+  /* --- Post Card --- */
+  .ig-post {
+    background: var(--white);
+    border-bottom: 1px solid rgba(225, 217, 188, .25);
+    margin-bottom: 2px;
+  }
+
+  .ig-post-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px
+  }
+
+  .ig-post-pfp {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: var(--ivory);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: .8rem;
+    color: var(--charcoal);
+    border: 1px solid var(--glass-border);
+  }
+
+  .ig-post-pfp img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-post-user {
+    flex: 1;
+    min-width: 0
+  }
+
+  .ig-post-username {
+    font-weight: 700;
+    font-size: .85rem;
+    color: var(--charcoal);
+    cursor: pointer
+  }
+
+  .ig-post-username:hover {
+    text-decoration: underline
+  }
+
+  .ig-post-location {
+    font-size: .7rem;
+    color: var(--muted);
+    font-weight: 500
+  }
+
+  .ig-post-more {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 4px
+  }
+
+  .ig-post-media {
+    width: 100%;
+    background: #000;
+    position: relative;
+    overflow: hidden
+  }
+
+  .ig-post-media img {
+    width: 100%;
+    display: block;
+    object-fit: cover
+  }
+
+  .ig-post-media video {
+    width: 100%;
+    display: block;
+    object-fit: cover
+  }
+
+  .ig-post-media .dbl-heart {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 80px;
+    color: #fff;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, .4));
+    pointer-events: none;
+    opacity: 0;
+    z-index: 5;
+  }
+
+  .ig-post-media .dbl-heart.pop {
+    animation: igHeartPop .8s ease forwards
+  }
+
+  @keyframes igHeartPop {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0
+    }
+
+    15% {
+      transform: translate(-50%, -50%) scale(1.3);
+      opacity: 1
+    }
+
+    30% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1
+    }
+
+    70% {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1
+    }
+
+    100% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 0
+    }
+  }
+
+  /* --- Actions --- */
+  .ig-post-actions {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px 4px
+  }
+
+  .ig-act-left {
+    display: flex;
+    gap: 4px;
+    flex: 1
+  }
+
+  .ig-act-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--charcoal);
+    transition: all .15s;
+  }
+
+  .ig-act-btn:hover {
+    background: var(--ivory)
+  }
+
+  .ig-act-btn:active {
+    transform: scale(.85)
+  }
+
+  .ig-act-btn svg {
+    width: 24px;
+    height: 24px
+  }
+
+  .ig-act-btn.liked svg {
+    color: #FF3B30;
+    fill: #FF3B30
+  }
+
+  .ig-act-btn.saved svg {
+    color: var(--charcoal);
+    fill: var(--charcoal)
+  }
+
+  /* --- Likes --- */
+  .ig-post-likes {
+    padding: 0 16px;
+    font-weight: 700;
+    font-size: .85rem;
+    color: var(--charcoal)
+  }
+
+  /* --- Caption --- */
+  .ig-post-caption {
+    padding: 4px 16px 0;
+    font-size: .85rem;
+    color: var(--charcoal);
+    line-height: 1.45
+  }
+
+  .ig-post-caption .cap-user {
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 4px
+  }
+
+  .ig-post-caption .cap-user:hover {
+    text-decoration: underline
+  }
+
+  .ig-post-caption .hashtag {
+    color: #00376B;
+    font-weight: 600
+  }
+
+  /* --- Comments Preview --- */
+  .ig-post-comments-preview {
+    padding: 4px 16px 0
+  }
+
+  .ig-view-all {
+    font-size: .82rem;
+    color: var(--muted);
+    cursor: pointer;
+    font-weight: 500;
+    border: none;
+    background: none;
+    padding: 2px 0
+  }
+
+  .ig-view-all:hover {
+    color: var(--charcoal)
+  }
+
+  .ig-comment-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 6px
+  }
+
+  .ig-comment-pfp {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: var(--ivory)
+  }
+
+  .ig-comment-pfp img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-comment-body {
+    flex: 1;
+    min-width: 0;
+    font-size: .82rem;
+    color: var(--charcoal);
+    line-height: 1.4
+  }
+
+  .ig-comment-body b {
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 4px
+  }
+
+  .ig-comment-body b:hover {
+    text-decoration: underline
+  }
+
+  .ig-comment-like {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--muted);
+    padding: 4px;
+    flex-shrink: 0
+  }
+
+  .ig-comment-like svg {
+    width: 12px;
+    height: 12px
+  }
+
+  /* --- Add Comment Input --- */
+  .ig-add-comment {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px 12px;
+    border-top: 1px solid rgba(225, 217, 188, .15)
+  }
+
+  .ig-add-comment-pfp {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: var(--ivory)
+  }
+
+  .ig-add-comment-pfp img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-comment-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: .82rem;
+    color: var(--charcoal);
+    background: transparent;
+    padding: 4px 0;
+    font-family: inherit;
+  }
+
+  .ig-comment-input::placeholder {
+    color: var(--muted)
+  }
+
+  .ig-comment-post {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #0095F6;
+    font-weight: 700;
+    font-size: .82rem;
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+
+  .ig-comment-post.active {
+    opacity: 1;
+    pointer-events: auto
+  }
+
+  /* --- Time --- */
+  .ig-post-time {
+    padding: 2px 16px 12px;
+    font-size: .65rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .3px
+  }
+
+  /* --- Comments Overlay Panel --- */
+  .ig-comments-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    flex-direction: column;
+    background: var(--white);
+  }
+
+  .ig-comments-panel.active {
+    display: flex
+  }
+
+  .ig-cp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--glass-border);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .ig-cp-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.4rem;
+    color: var(--charcoal);
+    padding: 4px 8px
+  }
+
+  .ig-cp-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 16px
+  }
+
+  .ig-cp-comment {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px
+  }
+
+  .ig-cp-pfp {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    background: var(--ivory)
+  }
+
+  .ig-cp-pfp img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-cp-body {
+    flex: 1;
+    min-width: 0
+  }
+
+  .ig-cp-user {
+    font-weight: 700;
+    font-size: .82rem;
+    color: var(--charcoal);
+    cursor: pointer
+  }
+
+  .ig-cp-user:hover {
+    text-decoration: underline
+  }
+
+  .ig-cp-text {
+    font-size: .85rem;
+    color: var(--charcoal);
+    line-height: 1.4;
+    margin-top: 2px
+  }
+
+  .ig-cp-time {
+    font-size: .65rem;
+    color: var(--muted);
+    margin-top: 4px
+  }
+
+  .ig-cp-footer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--glass-border);
+    background: var(--white);
+  }
+
+  .ig-cp-footer-pfp {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--ivory)
+  }
+
+  .ig-cp-footer-pfp img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover
+  }
+
+  .ig-cp-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: .85rem;
+    color: var(--charcoal);
+    background: transparent;
+    padding: 8px 0;
+    font-family: inherit
+  }
+
+  .ig-cp-input::placeholder {
+    color: var(--muted)
+  }
+
+  .ig-cp-submit {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #0095F6;
+    font-weight: 700;
+    font-size: .85rem;
+    opacity: .4;
+    pointer-events: none;
+    transition: opacity .2s
+  }
+
+  .ig-cp-submit.active {
+    opacity: 1;
+    pointer-events: auto
+  }
+
+  /* --- Empty State --- */
+  .ig-feed-empty {
+    text-align: center;
+    padding: 80px 24px;
+    color: var(--muted)
+  }
+
+  .ig-feed-empty svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: .5
+  }
+
+  .ig-feed-empty h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--charcoal);
+    margin-bottom: 6px
+  }
+
+  .ig-feed-empty p {
+    font-size: .85rem;
+    max-width: 260px;
+    margin: 0 auto
+  }
+
+  /* --- Type Badge --- */
+  .ig-type-badge {
+    font-size: .6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: var(--ivory);
+    color: var(--muted);
+    margin-left: 8px;
+  }
+
+  /* --- Policy Reel Card (full-screen style) --- */
+  .ig-policy-reel {
+    position: relative;
+    width: 100%;
+    min-height: 85vh;
+    background: linear-gradient(160deg, #0d0d0d 0%, #1a1a2e 40%, #16213e 70%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px 60px;
+    box-sizing: border-box;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+
+  .ig-policy-reel::before {
+    content: '';
+    position: absolute;
+    top: -60%;
+    left: -30%;
+    width: 160%;
+    height: 160%;
+    background: radial-gradient(circle, rgba(233, 69, 96, .12) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .ig-policy-reel::after {
+    content: '';
+    position: absolute;
+    bottom: -40%;
+    right: -20%;
+    width: 120%;
+    height: 120%;
+    background: radial-gradient(circle, rgba(72, 149, 239, .10) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  .ig-policy-reel .pr-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+    background: rgba(255, 255, 255, .08);
+    border: 2px solid rgba(255, 255, 255, .15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ig-policy-reel .pr-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    text-align: center;
+    letter-spacing: -.5px;
+    margin-bottom: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ig-policy-reel .pr-subtitle {
+    font-size: .78rem;
+    color: rgba(255, 255, 255, .55);
+    text-align: center;
+    margin-bottom: 28px;
+    font-weight: 500;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ig-policy-reel .pr-items {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 340px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ig-policy-reel .pr-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255, 255, 255, .06);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 14px;
+    padding: 12px 14px;
+  }
+
+  .ig-policy-reel .pr-item-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, .08);
+  }
+
+  .ig-policy-reel .pr-item-text {
+    flex: 1;
+    font-size: .8rem;
+    color: rgba(255, 255, 255, .85);
+    line-height: 1.5;
+  }
+
+  .ig-policy-reel .pr-item-text b {
+    font-weight: 700;
+    color: #fff
+  }
+
+  .ig-policy-reel .pr-dismiss {
+    margin-top: 28px;
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .18);
+    color: #fff;
+    backdrop-filter: blur(8px);
+    border-radius: 24px;
+    padding: 12px 36px;
+    font-weight: 700;
+    font-size: .82rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .ig-policy-reel .pr-dismiss:active {
+    transform: scale(.96);
+    opacity: .8
+  }
+
+  .ig-policy-reel .pr-scroll-hint {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, .35);
+    font-size: .7rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    animation: prBounce 2s ease-in-out infinite;
+  }
+
+  @keyframes prBounce {
+
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(0)
+    }
+
+    50% {
+      transform: translateX(-50%) translateY(-6px)
+    }
+  }
+
+  /* --- Responsive --- */
+  @media(max-width:980px) {
+    .ig-feed-wrap {
+      max-width: 100%
+    }
+
+    .ig-story-bar {
+      padding: 10px 12px;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10
+    }
+
+    #section-feed {
+      padding: 0 !important;
+      padding-bottom: 90px !important;
+      overflow-y: auto !important
+    }
+
+    .ig-comments-panel {
+      height: 100vh;
+      height: 100dvh
+    }
+
+    .ig-cp-header {
+      padding-top: calc(14px + env(safe-area-inset-top));
+    }
+
+    .ig-cp-list {
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      overscroll-behavior: contain
+    }
+
+    .ig-cp-footer {
+      padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    }
+  }
+
+  @media(min-width:981px) {
+    .ig-feed-wrap {
+      border-left: 1px solid rgba(225, 217, 188, .2);
+      border-right: 1px solid rgba(225, 217, 188, .2)
+    }
+
+    .ig-story-bar {
+      border-radius: 0
+    }
+  }
+</style>
+
+<!-- ====== SECTION: FEED / HOME ====== -->
+<div class="page-section" id="section-feed">
+  <div class="ig-feed-wrap">
+    <!-- Story Bar -->
+    <div class="ig-story-bar" id="igStoryBar"></div>
+    <!-- Post Feed -->
+    <div id="igFeedList"></div>
+  </div>
+</div>
+
+<!-- Comments Full-screen Panel -->
+<div class="ig-comments-panel" id="igCommentsPanel">
+  <div class="ig-cp-header">
+    <span>Comments</span>
+    <button class="ig-cp-close" onclick="closeFeedCommentsPanel()">&times;</button>
+  </div>
+  <div class="ig-cp-list" id="igCpList"></div>
+  <div class="ig-cp-footer">
+    <div class="ig-cp-footer-pfp" id="igCpMyPfp"></div>
+    <input class="ig-cp-input" id="igCpInput" placeholder="Add a comment..." maxlength="500">
+    <button class="ig-cp-submit" id="igCpSubmit" onclick="submitFeedPanelComment()">Post</button>
+  </div>
+</div>
+
+<script>
+  /* ====== FEED STATE ====== */
+  let feedPostsData = [];
+  let panelPostId = null;
+
+  const MY_PFP_URL = (() => {
+    const pp = '{{ my_profile_pic | default("", true) }}';
+    return (pp && pp !== 'default_profile.png') ? '/static/uploads/' + pp : '/static/Images/profile.png';
+  })();
+  const MY_USERNAME = '{{ my_username | default("", true) }}';
+
+  function escFeedHtml(s) {
+    const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML;
+  }
+
+  function formatCaption(caption) {
+    if (!caption) return '';
+    return escFeedHtml(caption).replace(/(#\w+)/g, '<span class="hashtag">$1</span>');
+  }
+
+  function pfpHtml(pic) {
+    return (pic && pic !== 'default_profile.png')
+      ? '<img src="/static/uploads/' + pic + '">'
+      : '<img src="/static/Images/profile.png">';
+  }
+
+  /* ====== STORY BAR ====== */
+  async function loadStoryBar() {
+    const bar = document.getElementById('igStoryBar');
+    try {
+      const res = await fetch('/api/statuses');
+      const groups = await res.json();
+
+      bar.innerHTML = '';
+
+      // "Your Story" (add) item — always first
+      const myGroup = groups.find(g => g.user_id === myId);
+      const myItem = document.createElement('div');
+      myItem.className = 'ig-story-item is-mine' + (myGroup ? '' : ' no-story');
+      myItem.innerHTML =
+        '<div class="ig-story-ring"><div class="ig-story-avatar">' + pfpHtml('{{ my_profile_pic | default("", true) }}') + '</div></div>'
+        + '<div class="ig-story-add">+</div>'
+        + '<span class="ig-story-name">Your story</span>';
+      myItem.onclick = () => {
+        if (myGroup) { openStatusViewerFromFeed(groups, groups.indexOf(myGroup)); }
+        else { triggerUpload('status'); }
+      };
+      bar.appendChild(myItem);
+
+      // Other users
+      groups.forEach((g, gi) => {
+        if (g.user_id === myId) return;
+        const hasUnseen = g.statuses.some(s => !s.viewed_by_me);
+        const item = document.createElement('div');
+        item.className = 'ig-story-item' + (hasUnseen ? '' : ' no-story');
+        item.innerHTML =
+          '<div class="ig-story-ring"><div class="ig-story-avatar">' + pfpHtml(g.profile_pic) + '</div></div>'
+          + '<span class="ig-story-name">' + escFeedHtml(g.username) + '</span>';
+        item.onclick = () => openStatusViewerFromFeed(groups, gi);
+        bar.appendChild(item);
+      });
+    } catch (e) {
+      bar.innerHTML = '';
+    }
+  }
+
+  /* ====== Open status viewer (reuse from status.html) ====== */
+  function openStatusViewerFromFeed(groups, groupIdx) {
+    if (typeof allStatusData !== 'undefined' && typeof openStatusViewer === 'function') {
+      allStatusData = groups;
+      openStatusViewer(groupIdx);
+    }
+  }
+
+  /* ====== LOAD FEED ====== */
+  async function loadFeed() {
+    const list = document.getElementById('igFeedList');
+    list.innerHTML = '<div class="ig-feed-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>Loading...</p></div>';
+
+    loadStoryBar();
+
+    try {
+      const [reelRes, postRes] = await Promise.all([
+        fetch('/api/reels'),
+        fetch('/api/posts')
+      ]);
+      const reels = await reelRes.json();
+      const feedPosts = await postRes.json();
+
+      feedPostsData = [];
+
+      reels.forEach(r => {
+        feedPostsData.push({
+          type: 'reel', id: r.id, user_id: r.user_id,
+          username: r.username, profile_pic: r.profile_pic,
+          media_url: r.video_url, media_type: 'video',
+          caption: r.caption, created_at: r.created_at,
+          like_count: r.like_count || 0, liked_by_me: r.liked_by_me,
+          comment_count: r.comment_count || 0
+        });
+      });
+
+      feedPosts.forEach(p => {
+        feedPostsData.push({
+          type: 'post', id: p.id, user_id: p.user_id,
+          username: p.username, profile_pic: p.profile_pic,
+          media_url: p.media_url, media_type: p.media_type,
+          caption: p.caption, created_at: p.created_at,
+          like_count: p.like_count || 0, liked_by_me: p.liked_by_me,
+          comment_count: p.comment_count || 0
+        });
+      });
+
+      feedPostsData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      list.innerHTML = '';
+      if (!feedPostsData.length) {
+        list.innerHTML = '<div class="ig-feed-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><h3>Nothing yet</h3><p>Posts and reels from people will appear here.</p></div>';
+        return;
+      }
+
+      // Insert policy reel before the first post
+      if (!sessionStorage.getItem('policyDismissed')) {
+        renderPolicyReel(list);
+      }
+      feedPostsData.forEach((p, idx) => {
+        renderPost(p, idx, list);
+      });
+
+    } catch (e) {
+      list.innerHTML = '<div class="ig-feed-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="8" y1="15" x2="16" y2="15"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><p>Could not load feed</p></div>';
+    }
+  }
+
+  /* ====== RENDER POLICY REEL (full-screen style) ====== */
+  function renderPolicyReel(container) {
+    const el = document.createElement('div');
+    el.className = 'ig-policy-reel';
+    el.innerHTML = `
+    <div class="pr-logo">💬</div>
+    <div class="pr-title">Welcome to Chit-Chat</div>
+    <div class="pr-subtitle">Our community guidelines to keep things safe &amp; fun</div>
+    <div class="pr-items">
+      <div class="pr-item">
+        <div class="pr-item-icon">🤝</div>
+        <div class="pr-item-text"><b>Be Respectful</b> — Treat everyone with kindness and dignity.</div>
+      </div>
+      <div class="pr-item">
+        <div class="pr-item-icon">🚫</div>
+        <div class="pr-item-text"><b>No Hate Speech</b> — Harassment, bullying, or discrimination is not tolerated.</div>
+      </div>
+      <div class="pr-item">
+        <div class="pr-item-icon">🔒</div>
+        <div class="pr-item-text"><b>Protect Privacy</b> — Never share personal information without consent.</div>
+      </div>
+      <div class="pr-item">
+        <div class="pr-item-icon">🎨</div>
+        <div class="pr-item-text"><b>Original Content</b> — Only post content you own or have permission to share.</div>
+      </div>
+      <div class="pr-item">
+        <div class="pr-item-icon">⚠️</div>
+        <div class="pr-item-text"><b>Report Violations</b> — Help us by reporting content that breaks these rules.</div>
+      </div>
+    </div>
+    <button class="pr-dismiss" onclick="dismissPolicyReel(this)">Got it, let\'s go!</button>
+    <div class="pr-scroll-hint">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+      Scroll down for posts
+    </div>
+  `;
+    container.appendChild(el);
+  }
+  function dismissPolicyReel(btn) {
+    sessionStorage.setItem('policyDismissed', '1');
+    btn.closest('.ig-policy-reel').remove();
+  }
+
+  /* ====== RENDER POST ====== */
+  function renderPost(p, idx, container) {
+    const card = document.createElement('div');
+    card.className = 'ig-post';
+    card.id = 'ig-post-' + p.type + '-' + p.id;
+
+    // Profile pic URL
+    const ppUrl = pfpHtml(p.profile_pic);
+    const profileHref = '/user_profile/' + p.user_id;
+
+    // Media
+    let mediaHtml = '';
+    if (p.media_type === 'video') {
+      mediaHtml = '<div class="ig-post-media" ondblclick="dblLikePost(' + idx + ', this)">'
+        + '<video src="' + p.media_url + '" playsinline preload="metadata" loop muted '
+        + 'onclick="this.paused?this.play():this.pause()" style="cursor:pointer"></video>'
+        + '<div class="dbl-heart">❤️</div></div>';
+    } else {
+      mediaHtml = '<div class="ig-post-media" ondblclick="dblLikePost(' + idx + ', this)">'
+        + '<img src="' + p.media_url + '" loading="lazy">'
+        + '<div class="dbl-heart">❤️</div></div>';
+    }
+
+    // Type badge
+    const badge = p.type === 'reel' ? '<span class="ig-type-badge">Reel</span>' : '';
+
+    card.innerHTML =
+      // Header
+      '<div class="ig-post-header">'
+      + '<div class="ig-post-pfp" onclick="location.href=\'' + profileHref + '\'">' + ppUrl + '</div>'
+      + '<div class="ig-post-user">'
+      + '<span class="ig-post-username" onclick="location.href=\'' + profileHref + '\'">' + escFeedHtml(p.username) + '</span>' + badge
+      + '</div>'
+      + '</div>'
+      // Media
+      + mediaHtml
+      // Actions
+      + '<div class="ig-post-actions">'
+      + '<div class="ig-act-left">'
+      + '<button class="ig-act-btn' + (p.liked_by_me ? ' liked' : '') + '" id="iglike-' + idx + '" onclick="toggleFeedLike(' + idx + ')">'
+      + '<svg viewBox="0 0 24 24" fill="' + (p.liked_by_me ? '#FF3B30' : 'none') + '" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></button>'
+      + '<button class="ig-act-btn" onclick="focusCommentInput(' + idx + ')">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></button>'
+
+      + '</div>'
+      + '</div>'
+      // Likes
+      + '<div class="ig-post-likes" id="iglikes-' + idx + '">' + formatLikes(p.like_count) + '</div>'
+      // Caption
+      + (p.caption ? '<div class="ig-post-caption"><span class="cap-user" onclick="location.href=\'' + profileHref + '\'">' + escFeedHtml(p.username) + '</span>' + formatCaption(p.caption) + '</div>' : '')
+      // Comments preview
+      + '<div class="ig-post-comments-preview" id="igcprev-' + idx + '">'
+      + (p.comment_count > 0 ? '<button class="ig-view-all" onclick="openFeedCommentsPanel(' + idx + ')">View all ' + p.comment_count + ' comments</button>' : '')
+      + '</div>'
+      // Add comment
+      + '<div class="ig-add-comment">'
+      + '<div class="ig-add-comment-pfp" onclick="location.href=\'/profile\'"><img src="' + MY_PFP_URL + '"></div>'
+      + '<input class="ig-comment-input" id="iginput-' + idx + '" placeholder="Add a comment..." maxlength="500" oninput="toggleInlinePost(this,' + idx + ')">'
+      + '<button class="ig-comment-post" id="igpostbtn-' + idx + '" onclick="submitInlineComment(' + idx + ')">Post</button>'
+      + '</div>'
+      // Time
+      + '<div class="ig-post-time">' + getTimeAgo(new Date(p.created_at)) + '</div>';
+
+    container.appendChild(card);
+  }
+
+  /* ====== INTERACTIONS ====== */
+
+  // Like toggle
+  async function toggleFeedLike(idx) {
+    const p = feedPostsData[idx];
+    if (!p) return;
+    const endpoint = p.type === 'reel' ? '/api/reel/' + p.id + '/like' : '/api/post/' + p.id + '/like';
+    try {
+      const res = await fetch(endpoint, { method: 'POST' });
+      const data = await res.json();
+      p.liked_by_me = data.liked;
+      p.like_count = data.count;
+      // Update button
+      const btn = document.getElementById('iglike-' + idx);
+      if (btn) {
+        btn.classList.toggle('liked', data.liked);
+        btn.querySelector('svg path').setAttribute('fill', data.liked ? '#FF3B30' : 'none');
+      }
+      // Update likes text
+      const el = document.getElementById('iglikes-' + idx);
+      if (el) el.textContent = formatLikes(data.count);
+      // Update reelsData if reel
+      if (p.type === 'reel' && typeof reelsData !== 'undefined') {
+        const r = reelsData.find(x => x.id === p.id);
+        if (r) { r.liked_by_me = data.liked; r.like_count = data.count; }
+      }
+    } catch (e) { }
+  }
+
+  // Double-tap like
+  function dblLikePost(idx, mediaEl) {
+    const p = feedPostsData[idx];
+    if (!p) return;
+    // Show heart animation
+    const heart = mediaEl.querySelector('.dbl-heart');
+    if (heart) {
+      heart.classList.remove('pop');
+      void heart.offsetWidth;
+      heart.classList.add('pop');
+    }
+    // If not liked, like it
+    if (!p.liked_by_me) toggleFeedLike(idx);
+  }
+
+  // Format likes
+  function formatLikes(count) {
+    if (count === 0) return '';
+    if (count === 1) return '1 like';
+    return count.toLocaleString() + ' likes';
+  }
+
+  // Focus comment input
+  function focusCommentInput(idx) {
+    const input = document.getElementById('iginput-' + idx);
+    if (input) input.focus();
+  }
+
+  // Toggle inline post button
+  function toggleInlinePost(input, idx) {
+    const btn = document.getElementById('igpostbtn-' + idx);
+    if (btn) btn.classList.toggle('active', input.value.trim().length > 0);
+  }
+
+  // Submit inline comment
+  async function submitInlineComment(idx) {
+    const p = feedPostsData[idx];
+    if (!p) return;
+    const input = document.getElementById('iginput-' + idx);
+    const text = input.value.trim();
+    if (!text) return;
+    // Disable button while submitting
+    const btn = document.getElementById('igpostbtn-' + idx);
+    if (btn) { btn.classList.remove('active'); btn.style.pointerEvents = 'none'; }
+    input.value = '';
+
+    const endpoint = p.type === 'reel'
+      ? '/api/reel/' + p.id + '/comments'
+      : '/api/post/' + p.id + '/comment';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: text })
+      });
+      if (!res.ok) throw new Error('Failed to post comment');
+      const data = await res.json();
+      if (data.success) {
+        p.comment_count = data.count || (p.comment_count + 1);
+        // Add comment to preview area
+        const prev = document.getElementById('igcprev-' + idx);
+        if (prev) {
+          // Add "view all" if it doesn't exist
+          let viewAll = prev.querySelector('.ig-view-all');
+          if (!viewAll) {
+            viewAll = document.createElement('button');
+            viewAll.className = 'ig-view-all';
+            viewAll.onclick = () => openFeedCommentsPanel(idx);
+            prev.insertBefore(viewAll, prev.firstChild);
+          }
+          viewAll.textContent = p.comment_count === 1 ? 'View 1 comment' : (p.comment_count > 1 ? 'View all ' + p.comment_count + ' comments' : '');
+          // Show the new comment inline
+          const row = document.createElement('div');
+          row.className = 'ig-comment-row';
+          row.innerHTML =
+            '<div class="ig-comment-body"><b onclick="location.href=\'/profile\'">' + escFeedHtml(data.username || MY_USERNAME) + '</b>' + escFeedHtml(text) + '</div>';
+          prev.appendChild(row);
+        }
+      }
+    } catch (e) {
+      // Restore text on failure
+      input.value = text;
+    } finally {
+      if (btn) btn.style.pointerEvents = '';
+      toggleInlinePost(input, idx);
+    }
+  }/* ====== COMMENTS PANEL ====== */
+  async function openFeedCommentsPanel(idx) {
+    const p = feedPostsData[idx];
+    if (!p) return;
+    panelPostId = idx;
+
+    const panel = document.getElementById('igCommentsPanel');
+    const list = document.getElementById('igCpList');
+    const pfpEl = document.getElementById('igCpMyPfp');
+    pfpEl.innerHTML = '<img src="' + MY_PFP_URL + '">';
+
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>';
+    panel.classList.add('active');
+
+    // Wire up input
+    const inp = document.getElementById('igCpInput');
+    const sub = document.getElementById('igCpSubmit');
+    inp.value = '';
+    sub.classList.remove('active');
+    inp.oninput = () => sub.classList.toggle('active', inp.value.trim().length > 0);
+
+    const endpoint = p.type === 'reel'
+      ? '/api/reel/' + p.id + '/comments'
+      : '/api/post/' + p.id + '/comments';
+
+    try {
+      const res = await fetch(endpoint);
+      const comments = await res.json();
+      list.innerHTML = '';
+      if (!comments.length) {
+        list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">No comments yet. Be the first!</div>';
+        return;
+      }
+      comments.forEach(c => {
+        const cmEl = document.createElement('div');
+        cmEl.className = 'ig-cp-comment';
+        cmEl.innerHTML =
+          '<div class="ig-cp-pfp" onclick="location.href=\'/user_profile/' + c.user_id + '\'">' + pfpHtml(c.profile_pic) + '</div>'
+          + '<div class="ig-cp-body">'
+          + '<span class="ig-cp-user" onclick="location.href=\'/user_profile/' + c.user_id + '\'">' + escFeedHtml(c.username) + '</span>'
+          + '<div class="ig-cp-text">' + escFeedHtml(c.comment) + '</div>'
+          + '<div class="ig-cp-time">' + getTimeAgo(new Date(c.created_at)) + '</div>'
+          + '</div>';
+        list.appendChild(cmEl);
+      });
+    } catch (e) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted)">Could not load comments</div>';
+    }
+  }
+
+  function closeFeedCommentsPanel() {
+    document.getElementById('igCommentsPanel').classList.remove('active');
+    panelPostId = null;
+  }
+
+  async function submitFeedPanelComment() {
+    if (panelPostId === null) return;
+    const p = feedPostsData[panelPostId];
+    if (!p) return;
+    const inp = document.getElementById('igCpInput');
+    const text = inp.value.trim();
+    if (!text) return;
+    inp.value = '';
+    document.getElementById('igCpSubmit').classList.remove('active');
+
+    const endpoint = p.type === 'reel'
+      ? '/api/reel/' + p.id + '/comments'
+      : '/api/post/' + p.id + '/comment';
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment: text })
+      });
+      if (!res.ok) throw new Error('Failed to post comment');
+      const data = await res.json();
+      if (data.success) {
+        p.comment_count = data.count || (p.comment_count + 1);
+        // Append to panel list
+        const list = document.getElementById('igCpList');
+        const empty = list.querySelector('div[style]');
+        if (empty && empty.textContent.includes('No comments')) list.innerHTML = '';
+        const cmEl = document.createElement('div');
+        cmEl.className = 'ig-cp-comment';
+        cmEl.innerHTML =
+          '<div class="ig-cp-pfp" onclick="location.href=\'/profile\'">' + '<img src="' + MY_PFP_URL + '">' + '</div>'
+          + '<div class="ig-cp-body">'
+          + '<span class="ig-cp-user">' + escFeedHtml(data.username || MY_USERNAME) + '</span>'
+          + '<div class="ig-cp-text">' + escFeedHtml(text) + '</div>'
+          + '<div class="ig-cp-time">Just now</div>'
+          + '</div>';
+        list.appendChild(cmEl);
+        list.scrollTop = list.scrollHeight;
+        // Update preview
+        const prev = document.getElementById('igcprev-' + panelPostId);
+        if (prev) {
+          let viewAll = prev.querySelector('.ig-view-all');
+          if (!viewAll) {
+            viewAll = document.createElement('button');
+            viewAll.className = 'ig-view-all';
+            const capturedIdx = panelPostId;
+            viewAll.onclick = () => openFeedCommentsPanel(capturedIdx);
+            prev.insertBefore(viewAll, prev.firstChild);
+          }
+          viewAll.textContent = p.comment_count === 1 ? 'View 1 comment' : (p.comment_count > 1 ? 'View all ' + p.comment_count + ' comments' : '');
+        }
+      }
+    } catch (e) { }
+  }
+
+  // Enter key to submit panel comment
+  document.getElementById('igCpInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitFeedPanelComment(); }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.innerWidth <= 980) {
+      setTimeout(() => switchSection('feed'), 0);
+    }
+  });
+</script>

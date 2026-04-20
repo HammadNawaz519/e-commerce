@@ -1,0 +1,407 @@
+﻿<!-- SAGE AI BUBBLE â€” Built by Hammad & Mobeen -->
+<style>
+#sage-bubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  max-height: calc(100vh - 40px);
+  pointer-events: none;
+}
+
+#sage-fab {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1A1C23 0%, #2D3148 100%);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  flex-shrink: 0;
+  pointer-events: auto;
+}
+#sage-fab:hover { transform: scale(1.08); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+#sage-fab svg   { width: 22px; height: 22px; }
+
+#sage-panel {
+  width: 350px;
+  height: min(540px, calc(100vh - 90px));
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.08);
+  border: 1px solid rgba(248,247,244,0.4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.88) translateY(16px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s;
+  transform-origin: bottom right;
+  flex-shrink: 0;
+}
+#sage-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: auto; }
+
+body[data-role="customer"] #sage-panel {
+  width: min(525px, calc(100vw - 40px));
+}
+
+/* â”€â”€ HEADER â”€â”€ */
+.sage-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #1A1C23 0%, #2D3148 100%);
+  flex-shrink: 0;
+}
+.sage-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: rgba(255,255,255,0.13);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.sage-header-text { flex: 1; min-width: 0; }
+.sage-name     { font-size: 14px; font-weight: 800; color: #fff; }
+.sage-header-actions { display: flex; align-items: center; gap: 4px; }
+
+#sage-close {
+  background: none; border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer; font-size: 16px; line-height: 1;
+  padding: 4px 7px; border-radius: 6px; transition: 0.15s; font-weight: 700;
+}
+#sage-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+
+/* â”€â”€ SHARED VIEW CONTAINER â”€â”€ */
+.sage-view {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  min-height: 0;
+}
+.sage-view.active { display: flex; }
+
+/* â”€â”€ CHAT MESSAGES â”€â”€ */
+.sage-msgs {
+  flex: 1; overflow-y: auto; overflow-x: hidden;
+  padding: 14px; display: flex; flex-direction: column;
+  gap: 10px; background: #F8F7F4; min-height: 0;
+}
+.sage-msgs::-webkit-scrollbar       { width: 4px; }
+.sage-msgs::-webkit-scrollbar-thumb { background: #F8F7F4; border-radius: 4px; }
+
+.sage-msg {
+  max-width: 90%; padding: 10px 13px; border-radius: 16px;
+  font-size: 13px; line-height: 1.55; word-break: break-word; flex-shrink: 0;
+}
+.sage-msg.bot  {
+  background: #fff; color: #1A1C23;
+  border-radius: 4px 16px 16px 16px;
+  border: 1px solid rgba(248,247,244,0.5); align-self: flex-start;
+}
+.sage-msg.user {
+  background: #1A1C23; color: #fff;
+  border-radius: 16px 4px 16px 16px; align-self: flex-end;
+}
+.sage-msg.typing  { opacity: 1; font-style: normal; }
+
+/* â”€â”€ TYPING DOTS ANIMATION â”€â”€ */
+.sage-typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 2px;
+}
+.sage-typing-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1A1C23;
+  display: inline-block;
+  animation: sageDotBounce 1.2s infinite ease-in-out;
+}
+.sage-typing-dots span:nth-child(1) { animation-delay: 0s; }
+.sage-typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.sage-typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes sageDotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1.1); opacity: 1; }
+}
+.sage-msg strong  { font-weight: 800; }
+.sage-msg ul, .sage-msg ol { padding-left: 16px; margin-top: 4px; }
+.sage-msg li { margin-bottom: 3px; }
+.sage-block + .sage-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #EAEBE6;
+}
+.sage-block-title {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8E9BAE;
+}
+.sage-block-body {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #1A1C23;
+}
+.sage-block-pre {
+  background: #F8F7F4;
+  border: 1px solid #EAEBE6;
+  border-radius: 10px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 170px;
+  overflow: auto;
+}
+
+
+/* â”€â”€ INPUT FOOTER â”€â”€ */
+.sage-footer {
+  padding: 10px 12px; background: #fff;
+  border-top: 1px solid rgba(248,247,244,0.4);
+  display: flex; gap: 8px; flex-shrink: 0;
+}
+#sage-input {
+  flex: 1; padding: 9px 13px; border-radius: 13px;
+  border: 1.5px solid #EAEBE6; background: #F9FAFB;
+  font-size: 13px; font-family: inherit; color: #1A1C23;
+  outline: none; transition: 0.2s; min-width: 0;
+}
+#sage-input:focus { border-color: #F8F7F4; background: #fff; }
+#sage-send {
+  width: 38px; height: 38px; border-radius: 11px;
+  background: #1A1C23; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: 0.2s; flex-shrink: 0;
+}
+#sage-send:hover { background: #1A1C23; }
+#sage-send svg { width: 15px; height: 15px; fill: #fff; }
+
+/* Retailer amber theme for FAB */
+body[data-role="retailer"] #sage-fab {
+  background: linear-gradient(135deg, #1A1C23 0%, #1A1C23 100%);
+  box-shadow: 0 8px 24px rgba(26,28,35,0.12);
+}
+body[data-role="retailer"] #sage-send:hover { background: #1A1C23; }
+
+@media (max-width: 480px) {
+  #sage-panel { width: calc(100vw - 32px); height: min(480px, calc(100vh - 80px)); }
+  #sage-bubble { right: 16px; bottom: 16px; }
+}
+</style>
+
+<div id="sage-bubble">
+  <div id="sage-panel">
+
+    <!-- HEADER -->
+    <div class="sage-header">
+      <div class="sage-avatar">S</div>
+      <div class="sage-header-text">
+        <div class="sage-name">Sage</div>
+      </div>
+      <div class="sage-header-actions">
+        <button id="sage-close" onclick="closeSage()">&#x2715;</button>
+      </div>
+    </div>
+
+    <div class="sage-view active" id="view-chat">
+      <div class="sage-msgs" id="sage-msgs"></div>
+      <div class="sage-footer">
+        <input id="sage-input" type="text" placeholder="Ask anything..." autocomplete="off"
+               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendToSage();}">
+        <button id="sage-send" onclick="sendToSage()">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <button id="sage-fab" onclick="toggleSage()" title="Ask Sage AI" style="pointer-events:auto;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.832-1.438A10 10 0 1012 2z"/>
+      <path d="M8 10h.01M12 10h.01M16 10h.01" stroke-width="2.5"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+(function() {
+  const panel   = document.getElementById('sage-panel');
+  const msgs    = document.getElementById('sage-msgs');
+  const input   = document.getElementById('sage-input');
+
+  const roleMeta = document.querySelector('meta[name="user-role"]');
+  const userRole = roleMeta ? roleMeta.getAttribute('content') : 'customer';
+  document.body.setAttribute('data-role', userRole);
+
+  let opened = false;
+  let historyLoaded = false;
+
+  /* â”€â”€â”€ FAB â”€â”€â”€ */
+  window.toggleSage = function() {
+    opened = !opened;
+    panel.classList.toggle('open', opened);
+    if (opened && !historyLoaded) loadChatHistory();
+    if (opened) setTimeout(() => input.focus(), 280);
+  };
+
+  window.closeSage = function() {
+    opened = false;
+    panel.classList.remove('open');
+  };
+
+  /* â”€â”€â”€ WELCOME â”€â”€â”€ */
+  function showWelcome() {
+    const msg = userRole === 'retailer'
+      ? "Hello! I'm **Sage**, your store analytics assistant. Ask about revenue, stock, orders, or any retail insights."
+      : "Hi! I'm **Sage**, your Shopy assistant. Ask about products, recommendations, or anything about the store.";
+    appendMsg(renderMarkdown(msg), 'bot');
+  }
+
+  /* â”€â”€â”€ CHAT HELPERS â”€â”€â”€ */
+  function appendMsg(html, type) {
+    const div = document.createElement('div');
+    div.className = 'sage-msg ' + type;
+    div.innerHTML = html;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function appendTyping() {
+    const div = document.createElement('div');
+    div.className = 'sage-msg bot typing';
+    div.innerHTML = '<div class="sage-typing-dots"><span></span><span></span><span></span></div>';
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+    return div;
+  }
+
+  function escapeHtml(text) {
+    return (text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function renderMarkdown(text) {
+    let html = escapeHtml(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    const lines = html.split('\n');
+    let inList = false;
+    const out = [];
+    for (const line of lines) {
+      const m = line.match(/^[-*]\s+(.+)/);
+      if (m) {
+        if (!inList) { out.push('<ul>'); inList = true; }
+        out.push(`<li>${m[1]}</li>`);
+      } else {
+        if (inList) { out.push('</ul>'); inList = false; }
+        out.push(line ? `<span>${line}</span>` : '<br>');
+      }
+    }
+    if (inList) out.push('</ul>');
+    return out.join('\n');
+  }
+
+  function toMultilineHtml(text) {
+    return escapeHtml(text).replace(/\n/g, '<br>');
+  }
+
+  function renderStructuredReply(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return renderMarkdown(String(payload || ''));
+    }
+
+    const queryRan = (payload.query_ran || payload.query || '').trim();
+    const dbOutput = (payload.db_output || '').trim();
+    const answer = (payload.reply || payload.answer || payload.error || '').trim();
+
+    if (!queryRan && !dbOutput) {
+      return renderMarkdown(answer || 'No response.');
+    }
+
+    return `
+      <div class="sage-block">
+        <div class="sage-block-title">Query Ran</div>
+        <div class="sage-block-body sage-block-pre">${toMultilineHtml(queryRan || 'N/A')}</div>
+      </div>
+      <div class="sage-block">
+        <div class="sage-block-title">Database Output</div>
+        <div class="sage-block-body sage-block-pre">${toMultilineHtml(dbOutput || 'No database output available.')}</div>
+      </div>
+      <div class="sage-block">
+        <div class="sage-block-title">Final Answer</div>
+        <div class="sage-block-body">${renderMarkdown(answer || 'No response.')}</div>
+      </div>
+    `;
+  }
+
+  window.sendToSage = async function() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    appendMsg(escapeHtml(text), 'user');
+    const typing = appendTyping();
+
+    try {
+      const res  = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+      });
+      const data = await res.json();
+      typing.remove();
+      appendMsg(renderStructuredReply(data), 'bot');
+    } catch(e) {
+      typing.remove();
+      appendMsg('Connection error. Please try again.', 'bot');
+    }
+  };
+
+  async function loadChatHistory() {
+    msgs.innerHTML = '';
+    try {
+      const res  = await fetch('/api/ai/history');
+      const data = await res.json();
+
+      const history = Array.isArray(data.history) ? data.history : [];
+      if (!history.length) {
+        showWelcome();
+      } else {
+        for (const item of history) {
+          if (item.sender === 'user') {
+            appendMsg(escapeHtml(item.message || ''), 'user');
+          } else if (item.message && typeof item.message === 'object') {
+            appendMsg(renderStructuredReply(item.message), 'bot');
+          } else {
+            appendMsg(renderMarkdown(item.message || ''), 'bot');
+          }
+        }
+      }
+    } catch(e) {
+      showWelcome();
+    } finally {
+      historyLoaded = true;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  }
+})();
+</script>
+

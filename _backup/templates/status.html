@@ -1,0 +1,217 @@
+<style>
+/* STATUS RINGS */
+.status-rings{display:flex;gap:14px;overflow-x:auto;padding:0 16px 20px;scrollbar-width:none}
+.status-rings::-webkit-scrollbar{display:none}
+.status-ring{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex-shrink:0}
+.status-ring-avatar{width:68px;height:68px;border-radius:50%;overflow:hidden;border:3px solid var(--sand);padding:3px;background:var(--white);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;color:var(--charcoal);transition:all .3s}
+.status-ring.is-mine .status-ring-avatar{border-color:#4ADE80}
+.status-ring.is-mine-seen .status-ring-avatar{border-color:#D1D5DB}
+.status-ring.has-unseen .status-ring-avatar{border-color:transparent;background:linear-gradient(var(--white),var(--white)) padding-box,linear-gradient(135deg,#f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%) border-box}
+.status-ring.all-seen .status-ring-avatar{border-color:#D1D5DB}
+.status-ring-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.status-ring-name{font-size:.7rem;font-weight:600;color:var(--muted);max-width:68px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* STATUS VIEWER */
+.status-viewer-overlay{
+  position:fixed;inset:0;z-index:9999;background:#000;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  padding:68px 0 96px; /* reserve header zone top + footer zone bottom */
+}
+.sv-progress-container{position:absolute;top:0;left:0;right:0;display:flex;gap:4px;padding:8px 12px;z-index:10}
+.sv-progress-seg{flex:1;height:3px;background:rgba(255,255,255,.3);border-radius:2px;overflow:hidden}
+.sv-progress-seg .sv-fill{height:100%;background:#fff;width:0%;transition:width .1s linear}
+.sv-header{position:absolute;top:20px;left:16px;display:flex;align-items:center;gap:12px;z-index:10}
+.sv-avatar{width:40px;height:40px;border-radius:50%;background:#333;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;border:2px solid rgba(255,255,255,.3)}
+.sv-avatar img{width:100%;height:100%;object-fit:cover}
+.sv-name{color:#fff;font-weight:700;font-size:.9rem}
+.sv-time{color:rgba(255,255,255,.6);font-size:.7rem}
+.sv-close{position:absolute;top:20px;right:16px;z-index:10;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.sv-close:hover{background:rgba(255,255,255,.2)}
+.sv-media{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sv-media img,.sv-media video{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px}
+.sv-caption{position:absolute;bottom:64px;left:0;right:0;text-align:center;color:#fff;font-size:.95rem;padding:0 24px;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.sv-footer{position:absolute;bottom:16px;left:16px;right:16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+.sv-views{color:rgba(255,255,255,.6);font-size:.75rem;display:flex;align-items:center;gap:4px}
+.sv-delete{background:rgba(255,59,48,.2);border:1px solid rgba(255,59,48,.3);color:#FF3B30;padding:6px 14px;border-radius:12px;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .2s}
+.sv-delete:hover{background:rgba(255,59,48,.4)}
+.sv-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:rgba(255,255,255,.1);border:none;color:#fff;font-size:2rem;width:48px;height:48px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.sv-nav:hover{background:rgba(255,255,255,.2)}
+.sv-prev{left:12px}
+.sv-next{right:12px}
+@media(max-width:980px){
+  .status-viewer-overlay .sv-nav{width:40px;height:40px;font-size:1.5rem}
+}
+</style>
+
+<!-- ====== SECTION: STATUS ====== -->
+<div class="page-section" id="section-status">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding:0 16px">
+    <div class="section-title" style="margin:0">Status</div>
+    <button class="upload-section-btn" onclick="triggerUpload('status')">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Add Status
+    </button>
+  </div>
+  <div class="status-rings" id="statusRings"></div>
+  <div id="statusEmptyMsg"></div>
+</div>
+
+<script>
+let allStatusData = [];
+let svUserIdx = 0;
+let svStatusIdx = 0;
+let svTimer = null;
+
+async function loadStatuses() {
+  try {
+    const res = await fetch('/api/statuses');
+    allStatusData = await res.json();
+    const rings = document.getElementById('statusRings');
+    const emptyMsg = document.getElementById('statusEmptyMsg');
+    if (!allStatusData.length) {
+      rings.innerHTML = '';
+      emptyMsg.innerHTML = '<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg></div><h3>No status updates</h3><p>Be the first to share a moment! Tap the + button above.</p></div>';
+      return;
+    }
+    emptyMsg.innerHTML = '';
+    rings.innerHTML = '';
+    allStatusData.forEach((group, idx) => {
+      const isMine = group.user_id === myId;
+      let ringClass = 'status-ring';
+      if (isMine) {
+        ringClass += group.statuses.every(s => s.viewed_by_me) ? ' is-mine-seen' : ' is-mine';
+      } else {
+        ringClass += group.statuses.some(s => !s.viewed_by_me) ? ' has-unseen' : ' all-seen';
+      }
+      const ring = document.createElement('div');
+      ring.className = ringClass;
+      const pfp = (group.profile_pic && group.profile_pic !== 'default_profile.png')
+        ? '<img src="/static/uploads/' + group.profile_pic + '">'
+        : '<img src="/static/Images/profile.png">';
+      ring.innerHTML = '<div class="status-ring-avatar">' + pfp + '</div>'
+        + '<div class="status-ring-name">' + (isMine ? 'My Status' : group.username) + '</div>';
+      ring.onclick = () => openStatusViewer(idx);
+      rings.appendChild(ring);
+    });
+  } catch (e) {}
+}
+
+function openStatusViewer(userIdx) {
+  svUserIdx = userIdx;
+  svStatusIdx = 0;
+  document.getElementById('statusViewer').style.display = 'flex';
+  showCurrentStatus();
+}
+
+function closeStatusViewer() {
+  clearInterval(svTimer); svTimer = null;
+  document.getElementById('statusViewer').style.display = 'none';
+  const v = document.querySelector('#svMedia video');
+  if (v) v.pause();
+  loadStatuses();
+}
+
+function showCurrentStatus() {
+  clearInterval(svTimer);
+  const group = allStatusData[svUserIdx];
+  if (!group) { closeStatusViewer(); return; }
+  const statuses = group.statuses;
+  if (svStatusIdx >= statuses.length) {
+    if (svUserIdx < allStatusData.length - 1) { svUserIdx++; svStatusIdx = 0; showCurrentStatus(); }
+    else closeStatusViewer();
+    return;
+  }
+  if (svStatusIdx < 0) {
+    if (svUserIdx > 0) { svUserIdx--; svStatusIdx = allStatusData[svUserIdx].statuses.length - 1; showCurrentStatus(); }
+    else { svStatusIdx = 0; showCurrentStatus(); }
+    return;
+  }
+  const s = statuses[svStatusIdx];
+  const isMine = group.user_id === myId;
+  const pc = document.getElementById('svProgressContainer');
+  pc.innerHTML = '';
+  statuses.forEach((_, i) => {
+    const seg = document.createElement('div'); seg.className = 'sv-progress-seg';
+    const fill = document.createElement('div'); fill.className = 'sv-fill';
+    if (i < svStatusIdx) fill.style.width = '100%';
+    else if (i === svStatusIdx) fill.id = 'svActiveFill';
+    seg.appendChild(fill); pc.appendChild(seg);
+  });
+  const pfp = (group.profile_pic && group.profile_pic !== 'default_profile.png')
+    ? '<img src="/static/uploads/' + group.profile_pic + '">'
+    : '<img src="/static/Images/profile.png">';
+  document.getElementById('svAvatar').innerHTML = pfp;
+  document.getElementById('svName').textContent = isMine ? 'My Status' : group.username;
+  document.getElementById('svTime').textContent = getTimeAgo(new Date(s.created_at));
+  const mediaDiv = document.getElementById('svMedia');
+  mediaDiv.innerHTML = '';
+  if (s.media_type === 'video') {
+    const vid = document.createElement('video');
+    vid.src = s.media_url; vid.autoplay = true; vid.playsInline = true;
+    vid.onended = () => nextStatusSlide();
+    mediaDiv.appendChild(vid);
+  } else {
+    const img = document.createElement('img');
+    img.src = s.media_url;
+    mediaDiv.appendChild(img);
+  }
+  document.getElementById('svCaption').textContent = s.caption || '';
+  document.getElementById('svViews').innerHTML = isMine ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align:middle;margin-right:3px"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg> ' + s.view_count + ' views' : '';
+  document.getElementById('svDeleteBtn').style.display = isMine ? 'block' : 'none';
+  if (!s.viewed_by_me) {
+    fetch('/api/status/' + s.id + '/view', { method: 'POST' });
+    s.viewed_by_me = 1;
+  }
+  if (s.media_type !== 'video') {
+    let elapsed = 0;
+    const duration = 5000;
+    svTimer = setInterval(() => {
+      elapsed += 50;
+      const fill = document.getElementById('svActiveFill');
+      if (fill) fill.style.width = (elapsed / duration * 100) + '%';
+      if (elapsed >= duration) { clearInterval(svTimer); nextStatusSlide(); }
+    }, 50);
+  } else {
+    const vid = mediaDiv.querySelector('video');
+    if (vid) {
+      svTimer = setInterval(() => {
+        if (vid.duration) {
+          const fill = document.getElementById('svActiveFill');
+          if (fill) fill.style.width = (vid.currentTime / vid.duration * 100) + '%';
+        }
+      }, 100);
+    }
+  }
+}
+
+function nextStatusSlide() { svStatusIdx++; showCurrentStatus(); }
+function prevStatusSlide() { svStatusIdx--; showCurrentStatus(); }
+
+async function deleteCurrentStatus() {
+  const group = allStatusData[svUserIdx];
+  if (!group) return;
+  const s = group.statuses[svStatusIdx];
+  if (!s) return;
+  try {
+    await fetch('/api/status/' + s.id, { method: 'DELETE' });
+    group.statuses.splice(svStatusIdx, 1);
+    if (!group.statuses.length) {
+      allStatusData.splice(svUserIdx, 1);
+      if (!allStatusData.length) { closeStatusViewer(); return; }
+      if (svUserIdx >= allStatusData.length) svUserIdx = allStatusData.length - 1;
+      svStatusIdx = 0;
+    } else if (svStatusIdx >= group.statuses.length) {
+      svStatusIdx = group.statuses.length - 1;
+    }
+    showCurrentStatus();
+  } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('statusViewer').addEventListener('click', function(e) {
+    if (e.target.closest('.sv-close,.sv-footer,.sv-header,.sv-nav')) return;
+    const rect = this.getBoundingClientRect();
+    if (e.clientX < rect.left + rect.width / 3) prevStatusSlide();
+    else if (e.clientX > rect.left + rect.width * 2 / 3) nextStatusSlide();
+  });
+});
+</script>

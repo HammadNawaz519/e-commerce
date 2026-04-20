@@ -1,0 +1,673 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Shopy</title>
+  <meta name="user-role" content="{{ role }}">
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --charcoal:#1A1C23;
+      --muted:#8E9BAE;
+      --sand:#E1D9BC;
+      --ivory:#F0F0DB;
+      --card:#FFFFFF;
+      --line:#EAEBE6;
+      --ok:#1A1C23;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
+    body {
+      min-height: 100vh;
+      background: #F8F7F4;
+      color: var(--charcoal);
+      padding: 24px;
+    }
+    .shell {
+      max-width: 1220px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 20px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(225,217,188,0.45);
+      border-radius: 24px;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.06);
+    }
+    .left-panel {
+      padding: 22px;
+      position: sticky;
+      top: 18px;
+      align-self: start;
+      max-height: calc(100vh - 36px);
+      overflow: auto;
+      height: fit-content;
+    }
+    .top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .back-btn {
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      color: var(--charcoal);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      background: #fff;
+      transition: .2s;
+    }
+    .back-btn:hover { background: #f5f6f8; border-color: #d8d8d0; }
+    .role-pill {
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(26,28,35,0.08);
+      color: var(--charcoal);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+    .avatar {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: linear-gradient(140deg, #1A1C23, #2D3044);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+    .name {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+    }
+    .email {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      word-break: break-all;
+    }
+    .meta {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .stats {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .stat-box {
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-v {
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .stat-l {
+      margin-top: 3px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .45px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .actions {
+      margin-top: 16px;
+      display: grid;
+      gap: 8px;
+    }
+    .action-link,
+    .logout-link {
+      text-decoration: none;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--charcoal);
+      background: #fff;
+      transition: .2s;
+      display: block;
+      text-align: center;
+    }
+    .action-link:hover { border-color: #d6cfb3; background: #faf8ef; }
+    .logout-link {
+      border-color: var(--charcoal);
+      border-width: 1.8px;
+      background: #fff;
+      outline: 1px solid rgba(26,28,35,0.16);
+    }
+    .logout-link:hover { background: #f3f5f7; border-color: var(--charcoal); }
+
+    /* Retailer profile keeps the dashboard sidebar intact. */
+    body.role-retailer .shell {
+      max-width: none;
+      grid-template-columns: 240px 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+    .retailer-sidebar {
+      background: var(--charcoal);
+      border-radius: 24px;
+      min-height: calc(100vh - 48px);
+      position: sticky;
+      top: 18px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.16);
+    }
+    .retailer-brand {
+      padding: 24px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .retailer-brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: .5px;
+    }
+    .retailer-brand-sub {
+      margin-top: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(255,255,255,0.35);
+    }
+    .retailer-nav {
+      display: grid;
+      gap: 4px;
+      padding: 14px 12px 16px;
+    }
+    .retailer-nav-link {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(255,255,255,0.62);
+      border-radius: 14px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      transition: .2s;
+    }
+    .retailer-nav-link:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.08);
+      transform: translateX(3px);
+    }
+    .retailer-nav-link.active {
+      color: #fff;
+      background: rgba(255,255,255,0.10);
+    }
+    .retailer-nav-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.25);
+      flex-shrink: 0;
+    }
+    .retailer-nav-link.active .retailer-nav-dot {
+      background: #fff;
+    }
+
+    .retailer-account-strip {
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .retailer-account-user {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .retailer-account-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(140deg, #1A1C23, #2D3044);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .retailer-account-name {
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .retailer-account-email {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 360px;
+    }
+    .retailer-account-logout {
+      text-decoration: none;
+      border-radius: 12px;
+      border: 1.6px solid var(--charcoal);
+      color: var(--charcoal);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      padding: 10px 14px;
+      background: #fff;
+      white-space: nowrap;
+      transition: .2s;
+    }
+    .retailer-account-logout:hover {
+      background: #f3f5f7;
+    }
+
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .profile-page-head {
+      padding: 18px 22px;
+    }
+    .profile-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+    }
+    .profile-subtitle {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .section {
+      padding: 20px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .field.full { grid-column: 1 / -1; }
+    .field label {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: .5px;
+    }
+    .field input,
+    .field textarea,
+    .field select {
+      width: 100%;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      color: var(--charcoal);
+      padding: 11px 13px;
+      font-size: 14px;
+      outline: none;
+      transition: .2s;
+    }
+    .field textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      border-color: #d8cfaf;
+      box-shadow: 0 0 0 3px rgba(225,217,188,0.34);
+    }
+    .save-btn {
+      margin-top: 14px;
+      border: none;
+      border-radius: 12px;
+      background: var(--charcoal);
+      color: #fff;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .save-btn:hover { transform: translateY(-1px); }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--charcoal);
+      color: #fff;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      transition: .28s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 980px) {
+      body { padding: 14px; }
+      .grid { grid-template-columns: 1fr; }
+
+      body.role-customer .shell { grid-template-columns: 1fr; }
+      body.role-customer .left-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+
+      body.role-retailer .shell { grid-template-columns: 220px 1fr; }
+      body.role-retailer .retailer-sidebar {
+        position: sticky;
+        top: 12px;
+      }
+
+      .retailer-account-email { max-width: 220px; }
+    }
+
+    @media (max-width: 760px) {
+      body.role-customer .shell { grid-template-columns: 1fr; }
+      body.role-customer .left-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+
+      body.role-retailer .shell { grid-template-columns: 74px 1fr; }
+      body.role-retailer .retailer-sidebar {
+        position: sticky;
+        top: 10px;
+        min-height: calc(100vh - 24px);
+      }
+      body.role-retailer .retailer-brand-sub,
+      body.role-retailer .retailer-brand-name,
+      body.role-retailer .retailer-nav-link span {
+        display: none;
+      }
+      body.role-retailer .retailer-nav-link {
+        justify-content: center;
+        padding: 12px 0;
+      }
+      body.role-retailer .retailer-nav-dot {
+        width: 10px;
+        height: 10px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      body.role-customer .shell { grid-template-columns: 1fr; }
+      body.role-customer .left-panel {
+        position: static;
+        max-height: none;
+        overflow: visible;
+      }
+
+      body.role-retailer .shell { grid-template-columns: 1fr; }
+      body.role-retailer .retailer-sidebar {
+        position: static;
+        min-height: auto;
+      }
+      body.role-retailer .retailer-brand-sub,
+      body.role-retailer .retailer-brand-name,
+      body.role-retailer .retailer-nav-link span {
+        display: inline;
+      }
+      body.role-retailer .retailer-nav-link {
+        justify-content: flex-start;
+        padding: 11px 14px;
+      }
+
+      .retailer-account-strip {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body class="role-{{ role }}">
+  <div class="shell">
+    {% if role == 'retailer' %}
+    <aside class="retailer-sidebar">
+      <div class="retailer-brand">
+        <div class="retailer-brand-name">Shopy</div>
+        <div class="retailer-brand-sub">Retailer Portal</div>
+      </div>
+      <nav class="retailer-nav">
+        <a class="retailer-nav-link" href="/retailer/dashboard"><div class="retailer-nav-dot"></div><span>Dashboard</span></a>
+        <a class="retailer-nav-link" href="/retailer/products"><div class="retailer-nav-dot"></div><span>Products</span></a>
+        <a class="retailer-nav-link" href="/retailer/orders"><div class="retailer-nav-dot"></div><span>Orders</span></a>
+        <a class="retailer-nav-link active" href="/profile"><div class="retailer-nav-dot"></div><span>Profile</span></a>
+        <a class="retailer-nav-link" href="/retailer/assistant"><div class="retailer-nav-dot"></div><span>Assistant</span></a>
+      </nav>
+    </aside>
+    {% else %}
+    <aside class="left-panel card">
+      <div class="top-row">
+        <a class="back-btn" href="{{ '/retailer/dashboard' if role == 'retailer' else '/shop' }}">Back</a>
+        <span class="role-pill">{{ role }}</span>
+      </div>
+
+      <div class="avatar">{{ (user.username[0] if user and user.username else 'U')|upper }}</div>
+      <div class="name">{{ user.username }}</div>
+      <div class="email">{{ user.email }}</div>
+      <div class="meta">Joined {{ (user.created_at[:10] if user.created_at else '') }}</div>
+
+      {% if role == 'retailer' %}
+      <div class="stats">
+        <div class="stat-box"><div class="stat-v">{{ summary.product_count }}</div><div class="stat-l">Products</div></div>
+        <div class="stat-box"><div class="stat-v">{{ summary.order_count }}</div><div class="stat-l">Orders</div></div>
+        <div class="stat-box"><div class="stat-v">Rs {{ "%.0f"|format(summary.revenue) }}</div><div class="stat-l">Revenue</div></div>
+        <div class="stat-box"><div class="stat-v">{{ summary.low_stock_count }}</div><div class="stat-l">Low Stock</div></div>
+      </div>
+      {% else %}
+      <div class="stats">
+        <div class="stat-box"><div class="stat-v">{{ summary.order_count }}</div><div class="stat-l">Orders</div></div>
+        <div class="stat-box"><div class="stat-v">{{ summary.wishlist_count }}</div><div class="stat-l">Wishlist</div></div>
+        <div class="stat-box"><div class="stat-v">{{ summary.cart_count }}</div><div class="stat-l">Cart Items</div></div>
+        <div class="stat-box"><div class="stat-v">Rs {{ "%.0f"|format(summary.total_spent) }}</div><div class="stat-l">Spent</div></div>
+      </div>
+      {% endif %}
+
+      <div class="actions">
+        {% if role == 'retailer' %}
+        <a class="action-link" href="/retailer/dashboard">Dashboard</a>
+        <a class="logout-link" href="/logout">Logout</a>
+        {% else %}
+        <a class="action-link" href="/shop">Shop Home</a>
+        <a class="action-link" href="/orders">My Orders</a>
+        <a class="action-link" href="/wishlist">Wishlist</a>
+        <a class="action-link" href="/cart">Cart</a>
+        <a class="logout-link" href="/logout">Logout</a>
+        {% endif %}
+      </div>
+    </aside>
+    {% endif %}
+
+    <main class="right-panel">
+      {% if role == 'retailer' %}
+      <section class="card retailer-account-strip">
+        <div class="retailer-account-user">
+          <div class="retailer-account-avatar">{{ (user.username[0] if user and user.username else 'R')|upper }}</div>
+          <div>
+            <div class="retailer-account-name">{{ user.username }}</div>
+            <div class="retailer-account-email">{{ user.email }}</div>
+          </div>
+        </div>
+        <a class="retailer-account-logout" href="/logout">Logout</a>
+      </section>
+      {% else %}
+      <section class="card profile-page-head">
+        <h1 class="profile-title">Profile</h1>
+        <p class="profile-subtitle">Manage your account details from here.</p>
+      </section>
+      {% endif %}
+
+      <section class="section card">
+        <h2 class="section-title">{{ 'About' if role == 'retailer' else 'Profile Details' }}</h2>
+        <div class="grid">
+          <div class="field">
+            <label>Username</label>
+            <input id="pfUsername" type="text" value="{{ user.username }}" maxlength="80">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input id="pfPhone" type="text" value="{{ user.phone_number or '' }}" maxlength="30" placeholder="03XX XXXXXXX">
+          </div>
+          <div class="field full">
+            <label>Bio</label>
+            <textarea id="pfBio" placeholder="Tell people about you or your store.">{{ user.bio or '' }}</textarea>
+          </div>
+        </div>
+        <button class="save-btn" onclick="saveProfile()">Save Account</button>
+      </section>
+
+      {% if role != 'retailer' %}
+      <section class="section card">
+        <h2 class="section-title">Default Address</h2>
+        <div class="grid">
+          <div class="field">
+            <label>Label</label>
+            <select id="adLabel">
+              <option value="Home" {% if default_address and default_address.label == 'Home' %}selected{% endif %}>Home</option>
+              <option value="Office" {% if default_address and default_address.label == 'Office' %}selected{% endif %}>Office</option>
+              <option value="Other" {% if default_address and default_address.label == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Full Name</label>
+            <input id="adName" type="text" value="{{ default_address.full_name if default_address and default_address.full_name else user.username }}" maxlength="100">
+          </div>
+          <div class="field">
+            <label>Phone</label>
+            <input id="adPhone" type="text" value="{{ default_address.phone if default_address and default_address.phone else user.phone_number or '' }}" maxlength="30">
+          </div>
+          <div class="field">
+            <label>City</label>
+            <input id="adCity" type="text" value="{{ default_address.city if default_address and default_address.city else '' }}" maxlength="100">
+          </div>
+          <div class="field">
+            <label>Province</label>
+            <input id="adProvince" type="text" value="{{ default_address.province if default_address and default_address.province else '' }}" maxlength="100">
+          </div>
+          <div class="field">
+            <label>Postal Code</label>
+            <input id="adPostal" type="text" value="{{ default_address.postal_code if default_address and default_address.postal_code else '' }}" maxlength="20">
+          </div>
+          <div class="field full">
+            <label>Address Line</label>
+            <textarea id="adLine" placeholder="Street, area, city details">{{ default_address.address_line if default_address and default_address.address_line else '' }}</textarea>
+          </div>
+        </div>
+        <button class="save-btn" onclick="saveAddress()">Save Address</button>
+      </section>
+      {% endif %}
+    </main>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function showToast(message) {
+      const t = document.getElementById('toast');
+      t.textContent = message;
+      t.classList.add('show');
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+    }
+
+    async function saveProfile() {
+      const payload = {
+        username: document.getElementById('pfUsername').value.trim(),
+        phone_number: document.getElementById('pfPhone').value.trim(),
+        bio: document.getElementById('pfBio').value.trim()
+      };
+      if (!payload.username) {
+        showToast('Username is required.');
+        return;
+      }
+
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showToast(data.success ? 'Account updated.' : (data.error || 'Could not update account.'));
+    }
+
+    async function saveAddress() {
+      if (!document.getElementById('adLine')) {
+        return;
+      }
+
+      const payload = {
+        label: document.getElementById('adLabel').value,
+        full_name: document.getElementById('adName').value.trim(),
+        phone: document.getElementById('adPhone').value.trim(),
+        city: document.getElementById('adCity').value.trim(),
+        province: document.getElementById('adProvince').value.trim(),
+        postal_code: document.getElementById('adPostal').value.trim(),
+        address_line: document.getElementById('adLine').value.trim()
+      };
+      if (!payload.address_line) {
+        showToast('Address is required.');
+        return;
+      }
+
+      const res = await fetch('/api/profile/address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      showToast(data.success ? 'Address saved.' : (data.error || 'Could not save address.'));
+    }
+  </script>
+</body>
+</html>
+
+

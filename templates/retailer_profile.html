@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Shopy Retailer</title>
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="user-role" content="retailer">
+  <style>
+    :root{
+      --charcoal:#1A1C23;
+      --muted:#8E9BAE;
+      --sand:#F8F7F4;
+      --ivory:#F8F7F4;
+      --accent:#1A1C23;
+      --success:#1A1C23;
+      --danger:#1A1C23;
+      --retailer:#1A1C23;
+      --bg:#F8F7F4;
+      --line:#EAEBE6;
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',sans-serif;}
+    html{scroll-behavior:smooth;}
+    body{display:flex;min-height:100vh;background:var(--bg);color:var(--charcoal);overflow-x:hidden;}
+
+    .sidebar{width:240px;background:var(--charcoal);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
+    .brand-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:0.5px;}
+    .brand-sub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,0.35);margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;margin-bottom:4px;text-decoration:none;color:rgba(255,255,255,0.6);font-size:14px;font-weight:600;transition:background-color 0.25s ease,color 0.25s ease,transform 0.25s ease;}
+    .nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;transform:translateX(3px);}
+    .nav-item.active{background:rgba(255,255,255,0.10);color:#fff;}
+    .nav-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0;}
+    .nav-item.active .nav-dot{background:#fff;}
+
+    .main{margin-left:240px;flex:1;padding:32px;}
+    .page-header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:20px;}
+    .page-title{font-size:26px;font-weight:800;}
+    .page-sub{font-size:14px;color:var(--muted);margin-top:5px;}
+
+    .account-strip{
+      background:#fff;
+      border:1px solid rgba(248,247,244,0.45);
+      border-radius:20px;
+      padding:16px;
+      margin-bottom:16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      box-shadow:0 12px 26px rgba(0,0,0,0.06);
+    }
+    .account-user{display:flex;align-items:center;gap:12px;min-width:0;}
+    .account-avatar{width:52px;height:52px;border-radius:50%;background:rgba(26,28,35,0.12);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:var(--charcoal);flex-shrink:0;}
+    .account-name{font-size:14px;font-weight:800;line-height:1.2;}
+    .account-email{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-all;}
+    .account-joined{font-size:11px;color:var(--muted);margin-top:4px;}
+    .logout-btn{
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      border:1.5px solid var(--line);
+      color:var(--charcoal);
+      font-size:13px;
+      font-weight:800;
+      padding:10px 14px;
+      background:#fff;
+      transition:.2s;
+      white-space:nowrap;
+    }
+    .logout-btn:hover{background:#f5f6f8;border-color:#d8d8d0;}
+
+    .card{background:#fff;border-radius:22px;padding:20px;border:1px solid rgba(248,247,244,0.45);box-shadow:0 12px 26px rgba(0,0,0,0.06);}
+    .section-title{font-size:18px;font-weight:800;margin-bottom:16px;}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .field{display:flex;flex-direction:column;gap:6px;}
+    .field.full{grid-column:1/-1;}
+    .field label{font-size:10px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:.5px;}
+    .field input,.field textarea{
+      width:100%;
+      border-radius:12px;
+      border:1.5px solid var(--line);
+      background:#fff;
+      color:var(--charcoal);
+      padding:11px 13px;
+      font-size:14px;
+      outline:none;
+      transition:.2s;
+    }
+    .field textarea{min-height:96px;resize:vertical;}
+    .field input:focus,.field textarea:focus{border-color:#d8cfaf;box-shadow:0 0 0 3px rgba(225,217,188,0.34);}
+    .save-btn{
+      margin-top:14px;
+      border:none;
+      border-radius:12px;
+      background:var(--charcoal);
+      color:#fff;
+      padding:12px 16px;
+      font-size:14px;
+      font-weight:800;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .save-btn:hover{transform:translateY(-1px);}
+
+    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(100px);background:var(--charcoal);color:#fff;border-radius:14px;padding:12px 18px;font-size:13px;font-weight:700;transition:.28s cubic-bezier(0.34,1.56,0.64,1);z-index:9999;pointer-events:none;}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+
+    @media(max-width:900px){
+      .grid{grid-template-columns:1fr;}
+      .account-strip{align-items:flex-start;}
+    }
+
+    @media(max-width:768px){
+      .sidebar{width:60px;}
+      .brand-name,.brand-sub,.nav-item span{display:none;}
+      .main{margin-left:60px;padding:16px 12px;}
+      .page-title{font-size:22px;}
+      .account-strip{flex-direction:column;align-items:flex-start;}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{animation:none !important;transition:none !important;}
+    }
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">Shopy</div>
+    <div class="brand-sub">Retailer Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="/retailer/dashboard"><div class="nav-dot"></div><span>Dashboard</span></a>
+    <a class="nav-item" href="/retailer/products"><div class="nav-dot"></div><span>Products</span></a>
+    <a class="nav-item" href="/retailer/orders"><div class="nav-dot"></div><span>Orders</span></a>
+    <a class="nav-item" href="/retailer/assistant"><div class="nav-dot"></div><span>Assistant</span></a>
+    <a class="nav-item active" href="/profile"><div class="nav-dot"></div><span>Profile</span></a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Profile</h1>
+      <p class="page-sub">Manage your retailer account details.</p>
+    </div>
+  </div>
+
+  <section class="account-strip" aria-label="Retailer account summary">
+    <div class="account-user">
+      <div class="account-avatar">{{ (user.username[0] if user and user.username else 'R')|upper }}</div>
+      <div>
+        <div class="account-name">{{ user.username }}</div>
+        <div class="account-email">{{ user.email }}</div>
+        <div class="account-joined">Joined {{ (user.created_at[:10] if user.created_at else '') }}</div>
+      </div>
+    </div>
+    <a class="logout-btn" href="/logout">Logout</a>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">About</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Username</label>
+        <input id="pfUsername" type="text" value="{{ user.username }}" maxlength="80">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input id="pfPhone" type="text" value="{{ user.phone_number or '' }}" maxlength="30" placeholder="03XX XXXXXXX">
+      </div>
+      <div class="field full">
+        <label>Bio</label>
+        <textarea id="pfBio" placeholder="Tell people about your store.">{{ user.bio or '' }}</textarea>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveProfile()">Save Account</button>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  function showToast(message) {
+    const t = document.getElementById('toast');
+    t.textContent = message;
+    t.classList.add('show');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+  }
+
+  async function saveProfile() {
+    const payload = {
+      username: document.getElementById('pfUsername').value.trim(),
+      phone_number: document.getElementById('pfPhone').value.trim(),
+      bio: document.getElementById('pfBio').value.trim(),
+    };
+
+    if (!payload.username) {
+      showToast('Username is required.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        showToast('Account updated.');
+        const nameEl = document.querySelector('.account-name');
+        const avatarEl = document.querySelector('.account-avatar');
+        if (nameEl) nameEl.textContent = payload.username;
+        if (avatarEl) avatarEl.textContent = (payload.username[0] || 'R').toUpperCase();
+      } else {
+        showToast(data.error || 'Could not update account.');
+      }
+    } catch (err) {
+      showToast('Network issue. Please try again.');
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ target_user.username }} &mdash; Chit-Chat</title>
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --charcoal: #1A1C23;
+      --muted: #8E9BAE;
+      --sand: #E1D9BC;
+      --ivory: #F0F0DB;
+      --white: #FFFFFF;
+      --cream: #FAF9F6;
+      --glass: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(245, 244, 238, 0.5);
+      --blur: 24px;
+      --card-radius: 40px;
+      --item-radius: 24px;
+      --shadow-sm: 0 4px 20px rgba(26, 28, 35, 0.06);
+      --shadow-md: 0 8px 30px rgba(26, 28, 35, 0.08);
+      --shadow-lg: 0 20px 60px rgba(26, 28, 35, 0.12);
+      --shadow-premium: 0 12px 40px rgba(26, 28, 35, 0.08), 0 4px 12px rgba(26, 28, 35, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(26, 28, 35, .12);
+      border-radius: 10px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(26, 28, 35, .22)
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--ivory) 0%, var(--cream) 100%);
+      color: var(--charcoal);
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* TOP NAV */
+    .pf-nav {
+      flex-shrink: 0;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      z-index: 100;
+    }
+
+    .pf-nav-back {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: var(--ivory);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: var(--charcoal);
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-sm);
+      transition: all .25s;
+    }
+
+    .pf-nav-back:hover {
+      background: var(--sand);
+      transform: translateX(-2px)
+    }
+
+    .pf-nav-title {
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: -.3px
+    }
+
+    /* BODY */
+    .pf-body {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    /* LEFT */
+    .pf-left {
+      width: 320px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      padding-bottom: 12px;
+    }
+
+    .pf-left::-webkit-scrollbar {
+      display: none
+    }
+
+    /* Card */
+    .pf-card {
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-premium);
+      padding: 28px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    /* Avatar */
+    .pf-avatar-wrap {
+      position: relative
+    }
+
+    .pf-avatar-ring {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      padding: 3px;
+      background: var(--glass-border);
+      display: block;
+    }
+
+    .pf-avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid var(--white);
+      overflow: hidden;
+      background: var(--ivory);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 2rem;
+      color: var(--charcoal);
+    }
+
+    .pf-avatar-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .pf-name {
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -.3px
+    }
+
+    .pf-bio {
+      font-size: .82rem;
+      color: #555;
+      line-height: 1.6;
+      word-break: break-word;
+      max-width: 260px;
+    }
+
+    .pf-bio-placeholder {
+      color: var(--muted);
+      font-style: italic
+    }
+
+    /* Stats */
+    .pf-stats {
+      display: flex;
+      width: 100%;
+      background: var(--ivory);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      overflow: hidden;
+    }
+
+    .pf-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 6px;
+    }
+
+    .pf-stat+.pf-stat {
+      border-left: 1px solid var(--glass-border)
+    }
+
+    .pf-stat-num {
+      font-weight: 800;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      color: var(--charcoal)
+    }
+
+    .pf-stat-lbl {
+      font-size: .62rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-top: 2px
+    }
+
+    button.pf-stat {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background .2s;
+    }
+
+    button.pf-stat * {
+      cursor: pointer;
+      user-select: none
+    }
+
+    button.pf-stat:hover {
+      background: var(--sand)
+    }
+
+    button.pf-stat:active {
+      background: var(--glass-border)
+    }
+
+    /* Buttons */
+    .pf-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%
+    }
+
+    .pf-btn {
+      flex: 1;
+      padding: 11px 6px;
+      border-radius: var(--item-radius);
+      font-weight: 700;
+      font-size: .82rem;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all .2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .pf-btn.primary {
+      background: var(--charcoal);
+      color: var(--white);
+      box-shadow: var(--shadow-md)
+    }
+
+    .pf-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg)
+    }
+
+    .pf-btn.secondary {
+      background: var(--ivory);
+      color: var(--charcoal);
+      border: 1.5px solid var(--glass-border)
+    }
+
+    .pf-btn.secondary:hover {
+      background: var(--sand)
+    }
+
+    .pf-btn.danger {
+      background: #FF3B30;
+      color: var(--white);
+      box-shadow: 0 4px 15px rgba(255, 59, 48, .25)
+    }
+
+    .pf-btn.danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(255, 59, 48, .35)
+    }
+
+    .pf-btn.unfollow {
+      background: var(--ivory);
+      color: var(--charcoal);
+      border: 1.5px solid var(--glass-border)
+    }
+
+    .pf-btn.unfollow:hover {
+      background: var(--sand)
+    }
+
+    .pf-btn.unblock {
+      background: var(--ivory);
+      color: #34C759;
+      border: 1.5px solid rgba(52, 199, 89, .3)
+    }
+
+    .pf-btn.unblock:hover {
+      background: #DCFCE7
+    }
+
+    .pf-btn svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor
+    }
+
+    /* RIGHT — grid */
+    .pf-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-premium);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .pf-grid-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .pf-grid-bar svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--charcoal)
+    }
+
+    .pf-grid-bar-title {
+      font-weight: 800;
+      font-size: .95rem;
+      letter-spacing: -.2px
+    }
+
+    .pf-grid-badge {
+      margin-left: auto;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--ivory);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .pf-grid {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      padding: 3px;
+      align-content: start;
+    }
+
+    .pf-grid-item {
+      aspect-ratio: 1;
+      background: var(--ivory);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .pf-grid-item img,
+    .pf-grid-item video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
+    }
+
+    .pf-grid-overlay {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: background .2s;
+    }
+
+    .pf-grid-item:hover .pf-grid-overlay {
+      background: rgba(26, 28, 35, .35)
+    }
+
+    .pf-grid-play {
+      opacity: 0;
+      transition: opacity .2s
+    }
+
+    .pf-grid-item:hover .pf-grid-play {
+      opacity: 1
+    }
+
+    .pf-grid-play svg {
+      width: 30px;
+      height: 30px;
+      fill: var(--white);
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5))
+    }
+
+    .pf-grid-empty {
+      grid-column: 1/-1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .pf-grid-empty svg {
+      width: 52px;
+      height: 52px;
+      fill: var(--muted);
+      opacity: .45
+    }
+
+    .pf-grid-empty p {
+      font-size: .88rem;
+      font-weight: 600
+    }
+
+    /* Toast */
+    .pf-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--charcoal);
+      color: var(--white);
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: .82rem;
+      font-weight: 700;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      transition: transform .3s cubic-bezier(.175, .885, .32, 1.275);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .pf-toast.show {
+      transform: translateX(-50%) translateY(0)
+    }
+
+    /* MOBILE */
+    @media(max-width:980px) {
+
+      html,
+      body {
+        overflow: auto;
+        height: auto
+      }
+
+      .pf-body {
+        flex-direction: column;
+        overflow: visible;
+        padding: 12px 12px 88px;
+        gap: 12px;
+        flex: none;
+      }
+
+      .pf-left {
+        width: 100%;
+        overflow: visible;
+        flex-shrink: 0
+      }
+
+      .pf-right {
+        overflow: visible;
+        border-radius: 28px
+      }
+
+      .pf-grid {
+        overflow: visible;
+        max-height: none
+      }
+
+      .pf-card {
+        border-radius: 28px;
+        padding: 22px 18px 18px
+      }
+
+      .pf-nav {
+        height: 56px;
+        padding: 0 14px
+      }
+
+      .pf-nav-back {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px
+      }
+
+      .pf-avatar-ring {
+        width: 88px;
+        height: 88px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP NAV -->
+  <nav class="pf-nav">
+    <a href="javascript:history.back()" class="pf-nav-back" title="Back">&#8592;</a>
+    <span class="pf-nav-title">{{ target_user.username }}</span>
+    <div style="width:40px"></div>
+  </nav>
+
+  <!-- BODY -->
+  <div class="pf-body">
+
+    <!-- LEFT -->
+    <div class="pf-left">
+
+      <!-- Profile card -->
+      <div class="pf-card">
+        <div class="pf-avatar-wrap">
+          <div class="pf-avatar-ring">
+            <div class="pf-avatar-inner">
+              {% if target_user.profile_pic %}
+              <img src="{{ url_for('static', filename='uploads/' + target_user.profile_pic) }}">
+              {% else %}
+              <img src="{{ url_for('static', filename='Images/profile.png') }}">
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="pf-name">{{ target_user.username }}</div>
+        <div class="pf-bio">
+          {% if target_user.bio %}{{ target_user.bio }}{% else %}<span class="pf-bio-placeholder">No bio yet</span>{%
+          endif %}
+        </div>
+
+        <!-- Stats -->
+        <div class="pf-stats">
+          <div class="pf-stat">
+            <div class="pf-stat-num">{{ reel_count }}</div>
+            <div class="pf-stat-lbl">Posts</div>
+          </div>
+          <button class="pf-stat" onclick="openUPModal('followers')">
+            <div class="pf-stat-num" id="followerCount">{{ follower_count }}</div>
+            <div class="pf-stat-lbl">Followers</div>
+          </button>
+          <button class="pf-stat" onclick="openUPModal('following')">
+            <div class="pf-stat-num">{{ following_count }}</div>
+            <div class="pf-stat-lbl">Following</div>
+          </button>
+        </div>
+
+        <!-- Follow / Block buttons -->
+        <div class="pf-actions">
+          <button class="pf-btn {% if is_following %}unfollow{% else %}primary{% endif %}" id="followBtn"
+            onclick="toggleFollow()">
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
+          </button>
+          <button class="pf-btn {% if is_blocked %}unblock{% else %}danger{% endif %}" id="blockBtn"
+            onclick="toggleBlock()">
+            {% if is_blocked %}Unblock{% else %}Block{% endif %}
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /pf-left -->
+
+    <!-- RIGHT: grid -->
+    <div class="pf-right">
+      <div class="pf-grid-bar">
+        <svg viewBox="0 0 24 24">
+          <path d="M3 3h7v7H3V3zm0 11h7v7H3v-7zm11-11h7v7h-7V3zm0 11h7v7h-7v-7z" />
+        </svg>
+        <span class="pf-grid-bar-title">Posts &amp; Reels</span>
+        <span class="pf-grid-badge" id="gridCount">{{ reel_count }}</span>
+      </div>
+      <div class="pf-grid" id="pfGrid">
+        <div class="pf-grid-empty">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+          </svg>
+          <p>No posts yet</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pf-body -->
+
+  <!-- TOAST -->
+  <div class="pf-toast" id="pfToast"></div>
+
+  <script>
+    const TARGET_ID = Number("{{ target_user.id }}");
+
+    /* Toast */
+    function showToast(msg) {
+      const t = document.getElementById('pfToast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    /* Follow */
+    async function toggleFollow() {
+      const btn = document.getElementById('followBtn');
+      const isFollowing = btn.classList.contains('unfollow');
+      const url = isFollowing ? '/api/unfollow' : '/api/follow';
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: TARGET_ID }) });
+        const d = await res.json();
+        if (d.success) {
+          if (isFollowing) {
+            btn.textContent = 'Follow'; btn.className = 'pf-btn primary';
+            showToast('Unfollowed');
+          } else {
+            btn.textContent = 'Unfollow'; btn.className = 'pf-btn unfollow';
+            showToast('Following!');
+          }
+          const fc = document.getElementById('followerCount');
+          if (d.follower_count !== undefined) fc.textContent = d.follower_count;
+        } else { showToast(d.error || 'Failed') }
+      } catch (e) { showToast('Network error') }
+    }
+
+    /* Block */
+    async function toggleBlock() {
+      const btn = document.getElementById('blockBtn');
+      const isBlocked = btn.classList.contains('unblock');
+      const url = isBlocked ? '/api/unblock' : '/api/block';
+      try {
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: TARGET_ID }) });
+        const d = await res.json();
+        if (d.success) {
+          if (isBlocked) {
+            btn.textContent = 'Block'; btn.className = 'pf-btn danger';
+            showToast('Unblocked');
+          } else {
+            btn.textContent = 'Unblock'; btn.className = 'pf-btn unblock';
+            showToast('Blocked');
+            // If we just blocked, also unfollow visually
+            const fb = document.getElementById('followBtn');
+            fb.textContent = 'Follow'; fb.className = 'pf-btn primary';
+          }
+        } else { showToast(d.error || 'Failed') }
+      } catch (e) { showToast('Network error') }
+    }
+
+    /* Load reels grid */
+    async function loadUserReels() {
+      try {
+        const res = await fetch('/api/reels');
+        const all = await res.json();
+        const theirs = all.filter(r => r.user_id === TARGET_ID);
+        const grid = document.getElementById('pfGrid');
+        document.getElementById('gridCount').textContent = theirs.length;
+        if (!theirs.length) {
+          grid.innerHTML = '<div class="pf-grid-empty"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg><p>No posts yet</p></div>';
+          return;
+        }
+        grid.innerHTML = '';
+        theirs.forEach(r => {
+          const el = document.createElement('div');
+          el.className = 'pf-grid-item';
+          el.innerHTML = '<video src="' + r.video_url + '" preload="metadata" muted playsinline></video>'
+            + '<div class="pf-grid-overlay"><div class="pf-grid-play">'
+            + '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+            + '</div></div>';
+          grid.appendChild(el);
+        });
+      } catch (e) { }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadUserReels);
+  </script>
+
+  <!-- ====== FOLLOWERS / FOLLOWING MODAL (view-only) ====== -->
+  <style>
+    .up-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9500;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .up-backdrop.open {
+      display: flex
+    }
+
+    .up-modal {
+      background: var(--white);
+      border-radius: 22px;
+      width: 92%;
+      max-width: 400px;
+      max-height: 72vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .up-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .up-header h3 {
+      font-weight: 800;
+      font-size: .95rem;
+      color: var(--charcoal);
+      margin: 0
+    }
+
+    .up-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--ivory);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+    }
+
+    .up-close:hover {
+      background: var(--sand)
+    }
+
+    .up-close svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--charcoal)
+    }
+
+    .up-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .up-tab {
+      flex: 1;
+      padding: 11px 0;
+      text-align: center;
+      font-weight: 700;
+      font-size: .8rem;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2.5px solid transparent;
+      transition: all .2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .up-tab.active {
+      color: var(--charcoal);
+      border-bottom-color: var(--charcoal)
+    }
+
+    .up-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .up-list::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .up-list::-webkit-scrollbar-thumb {
+      background: var(--sand);
+      border-radius: 4px
+    }
+
+    .up-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    .up-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      text-decoration: none;
+      cursor: default;
+    }
+
+    .up-item:hover {
+      background: none
+    }
+
+    .up-item img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .up-item-name {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--charcoal);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+  </style>
+
+  <div class="up-backdrop" id="upBackdrop" onclick="if(event.target===this)closeUPModal()">
+    <div class="up-modal">
+      <div class="up-header">
+        <h3 id="upTitle">Followers</h3>
+        <button class="up-close" onclick="closeUPModal()">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="up-tabs">
+        <button class="up-tab active" id="upTabFollowers" onclick="switchUPTab('followers')">Followers</button>
+        <button class="up-tab" id="upTabFollowing" onclick="switchUPTab('following')">Following</button>
+      </div>
+      <div class="up-list" id="upList"></div>
+    </div>
+  </div>
+
+  <script>
+    function openUPModal(tab) {
+      document.getElementById('upBackdrop').classList.add('open');
+      switchUPTab(tab);
+    }
+    function closeUPModal() {
+      document.getElementById('upBackdrop').classList.remove('open');
+    }
+    function switchUPTab(tab) {
+      document.getElementById('upTabFollowers').classList.toggle('active', tab === 'followers');
+      document.getElementById('upTabFollowing').classList.toggle('active', tab === 'following');
+      document.getElementById('upTitle').textContent = tab === 'followers' ? 'Followers' : 'Following';
+      loadUPList(tab);
+    }
+    async function loadUPList(tab) {
+      const list = document.getElementById('upList');
+      list.innerHTML = '<div class="up-empty">Loading...</div>';
+      try {
+        const url = '/api/user/' + TARGET_ID + '/' + tab;
+        const res = await fetch(url);
+        const users = await res.json();
+        if (!users.length) {
+          list.innerHTML = '<div class="up-empty">No ' + tab + ' yet</div>';
+          return;
+        }
+        list.innerHTML = '';
+        users.forEach(u => {
+          const div = document.createElement('div');
+          div.className = 'up-item';
+          const pic = u.profile_pic ? '/static/uploads/' + u.profile_pic : '/static/Images/profile.png';
+          div.innerHTML = '<img src="' + pic + '" alt="">' +
+            '<div class="up-item-name">' + u.username + '</div>';
+          list.appendChild(div);
+        });
+      } catch (e) {
+        list.innerHTML = '<div class="up-empty">Failed to load</div>';
+      }
+    }
+  </script>
+</body>
+
+</html>

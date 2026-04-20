@@ -1,0 +1,47 @@
+<style>
+/* CALL HISTORY CARDS */
+.call-history-card{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:var(--item-radius);background:var(--white);border:1px solid var(--glass-border);box-shadow:var(--shadow-sm);transition:all .3s;margin-bottom:10px}
+.call-history-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px)}
+.call-card-avatar{width:52px;height:52px;border-radius:18px;background:var(--ivory);display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:700;font-size:1.1rem;color:var(--charcoal);flex-shrink:0;border:1px solid var(--sand)}
+.call-card-avatar img{width:100%;height:100%;object-fit:cover}
+.call-card-info{flex:1;min-width:0}
+.call-card-name{font-weight:700;font-size:1rem;margin-bottom:2px}
+.call-card-meta{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.call-card-action{width:44px;height:44px;border-radius:50%;border:1px solid var(--glass-border);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);transition:all .3s;flex-shrink:0}
+.call-card-action:hover{background:var(--sand);color:var(--charcoal);transform:scale(1.1)}
+</style>
+
+<!-- ====== SECTION: CALL HISTORY ====== -->
+<div class="page-section" id="section-calls">
+  <div class="section-title">Call History</div>
+  <div id="callHistoryList"></div>
+</div>
+
+<script>
+async function loadCallHistory(){
+  try{
+    const res=await fetch('/api/call_history');const calls=await res.json();
+    const list=document.getElementById('callHistoryList');
+    if(!calls.length){list.innerHTML='<div class="empty-state"><div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="40" height="40"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.09 9.68 19.79 19.79 0 012.07 5a2 2 0 011.99-2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 10.9a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></div><h3>No calls yet</h3><p>Your call history will appear here</p></div>';return}
+    list.innerHTML='';
+    calls.forEach(c=>{
+      const pfp=(c.profile_pic&&c.profile_pic!=='default_profile.png')?`<img src="/static/uploads/${c.profile_pic}">`:`<img src="/static/Images/profile.png">`;
+      const isMissed=c.message==='Call not accepted';
+      const isOut=c.sender_id===myId;
+      const arrow=isOut?'↗':'↙';
+      const arrowColor=isMissed?'#FF3B30':'#34C759';
+      const ts=new Date(c.timestamp);
+      const timeStr=ts.toLocaleDateString([],{month:'short',day:'numeric'})+', '+ts.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:true});
+      const card=document.createElement('div');card.className='call-history-card';
+      const otherId=c.sender_id===myId?c.receiver_id:c.sender_id;
+      card.innerHTML=`
+        <div class="call-card-avatar">${pfp}</div>
+        <div class="call-card-info"><div class="call-card-name">${c.username}</div><div class="call-card-meta"><span style="color:${arrowColor};font-weight:700">${arrow}</span> ${c.message} · ${timeStr}</div></div>
+        <div class="call-card-action" onclick="switchSection('chats');setTimeout(()=>openChat(${otherId},'${(c.username||'').replace(/'/g,"\\'")  }','${(c.profile_pic||'').replace(/'/g,"\\'")  }'),100)">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        </div>`;
+      list.appendChild(card);
+    });
+  }catch(e){}
+}
+</script>

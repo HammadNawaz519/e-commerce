@@ -1,0 +1,10 @@
+flask
+flask-socketio
+flask-mail
+mysql-connector-python
+python-dotenv
+gevent
+gevent-websocket
+gunicorn
+requests
+psycopg2-binary

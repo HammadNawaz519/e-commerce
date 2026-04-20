@@ -1,0 +1,269 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ product.name }} - Shopy</title>
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--charcoal:#1A1C23;--muted:#8E9BAE;--sand:#E1D9BC;--ivory:#F0F0DB;--accent:#1A1C23;--success:#1A1C23;--danger:#1A1C23;--bg:#F8F7F4;}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',sans-serif;}
+    body{background:var(--bg);color:var(--charcoal);}
+    nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.9);backdrop-filter:blur(20px);border-bottom:1px solid rgba(225,217,188,0.4);padding:0 24px;height:62px;display:flex;align-items:center;gap:16px;}
+    .nav-brand{font-size:18px;font-weight:800;letter-spacing:1px;color:var(--charcoal);text-decoration:none;}
+    .back-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:10px;background:transparent;border:1.5px solid #E1D9BC;cursor:pointer;font-weight:700;font-size:13px;color:var(--charcoal);text-decoration:none;transition:0.2s;}
+    .back-btn:hover{background:transparent;border-color:var(--charcoal);}
+    .nav-actions{display:flex;align-items:center;gap:10px;margin-left:auto;}
+    .ghost-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:10px;background:#fff;color:var(--charcoal);border:1.5px solid #E5E7EB;cursor:pointer;font-weight:700;font-size:13px;text-decoration:none;transition:0.2s;}
+    .ghost-btn:hover{border-color:var(--charcoal);background:#fff;}
+    .cart-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;background:var(--charcoal);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:13px;text-decoration:none;position:relative;transition:0.2s;}
+    .cart-btn:hover{transform:scale(1.04);}
+    .cart-badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;}
+    .main{max-width:1100px;margin:40px auto;padding:0 24px;}
+    .layout{display:grid;grid-template-columns:1fr 1fr;gap:52px;margin-bottom:52px;}
+    .img-wrap{border-radius:24px;overflow:hidden;background:var(--ivory);aspect-ratio:1;display:flex;align-items:center;justify-content:center;border:1px solid rgba(225,217,188,0.4);}
+    .img-wrap img{width:100%;height:100%;object-fit:cover;}
+    .img-placeholder{font-size:14px;font-weight:700;color:var(--muted);letter-spacing:0.5px;}
+    .breadcrumb{font-size:12px;color:var(--muted);margin-bottom:14px;display:flex;gap:6px;}
+    .breadcrumb a{color:var(--muted);text-decoration:none;}
+    .breadcrumb a:hover{color:var(--charcoal);}
+    .cat-tag{display:inline-block;padding:4px 12px;border-radius:20px;background:transparent;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:12px;border:1.5px solid #E1D9BC;}
+    .prod-title{font-size:clamp(22px,3.5vw,32px);font-weight:800;line-height:1.2;margin-bottom:12px;}
+    .prod-meta{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+    .rating-text{font-size:13px;font-weight:700;color:#1A1C23;}
+    .retailer-text{font-size:13px;color:var(--muted);}
+    .price-box{background:transparent;border-radius:18px;padding:20px;margin-bottom:22px;border:1.5px solid #E1D9BC;}
+    .cur-price{font-size:36px;font-weight:800;}
+    .orig-price{font-size:15px;color:var(--muted);text-decoration:line-through;margin-left:10px;}
+    .disc-badge{display:inline-block;padding:3px 10px;border-radius:7px;background:rgba(26,28,35,0.1);color:var(--success);font-size:12px;font-weight:700;margin-left:8px;}
+    .stock-line{margin-top:8px;font-size:13px;font-weight:600;}
+    .in-stock-txt{color:var(--success);}
+    .out-stock-txt{color:var(--danger);}
+    .desc-block{margin-bottom:22px;}
+    .desc-block h3{font-size:14px;font-weight:800;margin-bottom:8px;}
+    .desc-block p{font-size:14px;color:rgba(26,28,35,0.72);line-height:1.75;}
+    .qty-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;}
+    .qty-label{font-size:13px;font-weight:700;color:var(--muted);}
+    .qty-ctrl{display:flex;align-items:center;border:1.5px solid #E5E7EB;border-radius:11px;overflow:hidden;}
+    .qty-ctrl button{width:36px;height:36px;border:none;background:#fff;cursor:pointer;font-size:18px;font-weight:700;color:var(--charcoal);transition:0.15s;}
+    .qty-ctrl button:hover{background:var(--ivory);}
+    .qty-ctrl input{width:48px;height:36px;border:none;text-align:center;font-size:14px;font-weight:700;outline:none;}
+    .action-row{display:flex;gap:12px;margin-bottom:22px;}
+    .cart-action-btn{flex:1;padding:15px;border-radius:14px;background:var(--charcoal);color:#fff;border:none;cursor:pointer;font-weight:800;font-size:14px;transition:0.2s;letter-spacing:0.2px;}
+    .cart-action-btn:hover{background:var(--accent);transform:scale(1.02);}
+    .wish-action-btn{padding:15px 18px;border-radius:14px;border:1.5px solid #E5E7EB;background:#fff;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);transition:0.2s;letter-spacing:0.2px;}
+    .wish-action-btn:hover{border-color:var(--danger);color:var(--danger);}
+    .wish-action-btn.active{background:rgba(26,28,35,0.10);border-color:var(--danger);color:var(--danger);}
+
+    .reviews-section{background:#fff;border-radius:24px;padding:28px;border:1px solid rgba(225,217,188,0.4);margin-bottom:40px;}
+    .reviews-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .reviews-title{font-size:18px;font-weight:800;}
+    .avg-big{font-size:32px;font-weight:800;margin-right:6px;}
+    .write-btn{padding:9px 20px;border-radius:11px;background:var(--charcoal);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:13px;transition:0.2s;}
+    .write-btn:hover{background:var(--accent);}
+    .review-card{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid rgba(225,217,188,0.3);}
+    .review-card:last-child{border-bottom:none;}
+    .rev-avatar{width:38px;height:38px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;border:1px solid rgba(225,217,188,0.5);}
+    .rev-body{flex:1;}
+    .rev-user{font-size:13px;font-weight:700;margin-bottom:3px;}
+    .rev-stars{font-size:12px;color:#1A1C23;font-weight:700;margin-bottom:5px;}
+    .rev-text{font-size:13px;color:rgba(26,28,35,0.7);line-height:1.6;}
+    .review-form{background:transparent;border:1.5px solid #E1D9BC;border-radius:18px;padding:20px;margin-top:18px;display:none;}
+    .review-form.open{display:block;}
+    .stars-pick{display:flex;gap:6px;font-size:26px;cursor:pointer;margin-bottom:12px;}
+    .stars-pick span{color:#ddd;transition:0.15s;line-height:1;}
+    .stars-pick span.on{color:#1A1C23;}
+    .rev-textarea{width:100%;padding:12px 16px;border-radius:12px;border:1.5px solid #E5E7EB;background:#fff;font-size:14px;resize:vertical;min-height:80px;outline:none;font-family:inherit;}
+    .rev-textarea:focus{border-color:var(--sand);}
+    .rev-submit{margin-top:10px;padding:11px 24px;border-radius:11px;background:var(--charcoal);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:14px;}
+
+    .related{margin-bottom:40px;}
+    .related-title{font-size:18px;font-weight:800;margin-bottom:18px;}
+    .related-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+    .rel-card{background:#fff;border-radius:18px;border:1px solid rgba(225,217,188,0.4);overflow:hidden;transition:0.2s;text-decoration:none;color:inherit;}
+    .rel-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(0,0,0,0.07);}
+    .rel-img{width:100%;height:155px;background:var(--ivory);display:flex;align-items:center;justify-content:center;overflow:hidden;}
+    .rel-img img{width:100%;height:100%;object-fit:cover;}
+    .rel-body{padding:12px;}
+    .rel-name{font-size:13px;font-weight:700;margin-bottom:4px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .rel-price{font-size:15px;font-weight:800;}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--charcoal);color:#fff;padding:13px 22px;border-radius:14px;font-size:14px;font-weight:600;z-index:9999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 8px 24px rgba(0,0,0,0.18);}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:var(--success);}
+    @media(max-width:768px){.layout{grid-template-columns:1fr;gap:24px;}.related-grid{grid-template-columns:repeat(2,1fr);}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="/shop">Shopy</a>
+  <a class="back-btn" href="/shop">Back to Shop</a>
+  <div class="nav-actions">
+    <a class="ghost-btn" href="/profile">Profile</a>
+    <a class="ghost-btn" href="/orders">Orders</a>
+    <a class="cart-btn" href="/cart">Cart <span class="cart-badge" id="cartBadge">{{ cart_count }}</span></a>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="layout">
+    <div>
+      <div class="img-wrap">
+        {% if product.image_url %}<img src="{{ product.image_url }}" alt="{{ product.name }}">
+        {% else %}<span class="img-placeholder">No Image Available</span>{% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="breadcrumb"><a href="/shop">Shop</a> / {{ product.category_name or 'General' }} / {{ product.name }}</div>
+      <div class="cat-tag">{{ product.category_name or 'General' }}</div>
+      <h1 class="prod-title">{{ product.name }}</h1>
+      <div class="prod-meta">
+        {% if product.avg_rating %}
+        <span class="rating-text">{{ "%.1f"|format(product.avg_rating) }} / 5  ({{ product.review_count }} reviews)</span>
+        {% else %}<span class="rating-text">No reviews yet</span>{% endif %}
+        <span class="retailer-text">Sold by {{ product.retailer_name or 'Retailer' }}</span>
+      </div>
+
+      <div class="price-box">
+        <span class="cur-price">Rs {{ "%.0f"|format(product.price) }}</span>
+        {% if product.original_price and product.original_price > product.price %}
+        <span class="orig-price">Rs {{ "%.0f"|format(product.original_price) }}</span>
+        <span class="disc-badge">{{ ((1 - product.price / product.original_price) * 100)|round|int }}% OFF</span>
+        {% endif %}
+        <div class="stock-line">
+          {% if product.stock > 0 %}<span class="in-stock-txt">In Stock - {{ product.stock }} remaining</span>
+          {% else %}<span class="out-stock-txt">Out of Stock</span>{% endif %}
+        </div>
+      </div>
+
+      {% if product.description %}
+      <div class="desc-block">
+        <h3>About this Product</h3>
+        <p>{{ product.description }}</p>
+      </div>
+      {% endif %}
+
+      <div class="qty-row">
+        <span class="qty-label">Quantity:</span>
+        <div class="qty-ctrl">
+          <button onclick="chQty(-1)">-</button>
+          <input type="number" id="qtyInp" value="1" min="1" max="{{ product.stock }}">
+          <button onclick="chQty(1)">+</button>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="cart-action-btn" id="addBtn"
+          data-pid="{{ product.id }}"
+          onclick="addToCartFromData(this)"
+          {% if product.stock == 0 %}disabled style="opacity:0.45;cursor:not-allowed;"{% endif %}>
+          {% if product.stock == 0 %}Out of Stock{% else %}Add to Cart{% endif %}
+        </button>
+        <button class="wish-action-btn {{ 'active' if in_wishlist }}" id="wishBtn"
+          data-pid="{{ product.id }}"
+          onclick="toggleWishlistFromData(this)">
+          {{ 'Saved' if in_wishlist else 'Wishlist' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVIEWS -->
+  <div class="reviews-section">
+    <div class="reviews-top">
+      <div>
+        <span class="avg-big">{{ "%.1f"|format(product.avg_rating) if product.avg_rating else '-' }}</span>
+        {% if product.avg_rating %}<span style="color:#1A1C23;font-weight:700;">/ 5</span>{% endif %}
+        <div style="font-size:13px;color:var(--muted);margin-top:3px;">{{ product.review_count }} review{% if product.review_count != 1 %}s{% endif %}</div>
+      </div>
+      <button class="write-btn" onclick="toggleReviewForm()">Write a Review</button>
+    </div>
+
+    <div class="review-form" id="reviewForm">
+      <p style="font-size:13px;font-weight:700;margin-bottom:8px;">Your Rating</p>
+      <div class="stars-pick" id="starsPick">
+        <span data-v="1">&#9733;</span><span data-v="2">&#9733;</span><span data-v="3">&#9733;</span>
+        <span data-v="4">&#9733;</span><span data-v="5">&#9733;</span>
+      </div>
+      <textarea class="rev-textarea" id="revText" placeholder="Share your experience with this product..."></textarea>
+      <button class="rev-submit" data-pid="{{ product.id }}" onclick="submitReviewFromData(this)">Post Review</button>
+    </div>
+
+    {% if reviews %}
+    {% for rv in reviews %}
+    <div class="review-card">
+      <div class="rev-avatar">{{ rv.username[0].upper() }}</div>
+      <div class="rev-body">
+        <div class="rev-user">{{ rv.username }}</div>
+        <div class="rev-stars">{{ rv.rating }}/5</div>
+        {% if rv.comment %}<div class="rev-text">{{ rv.comment }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p style="text-align:center;color:var(--muted);padding:20px 0;">No reviews yet - be the first!</p>
+    {% endif %}
+  </div>
+
+  {% if related %}
+  <div class="related">
+    <h2 class="related-title">You Might Also Like</h2>
+    <div class="related-grid">
+      {% for r in related %}
+      <a class="rel-card" href="/product/{{ r.id }}">
+        <div class="rel-img">{% if r.image_url %}<img src="{{ r.image_url }}" alt="{{ r.name }}">{% endif %}</div>
+        <div class="rel-body">
+          <div class="rel-name">{{ r.name }}</div>
+          <div class="rel-price">Rs {{ "%.0f"|format(r.price) }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<div class="toast" id="toast"></div>
+<script>
+  /* data-* wrappers: keep Jinja2 double-curly syntax out of JS onclick attributes */
+  function addToCartFromData(btn)    { addToCart(btn.dataset.pid); }
+  function toggleWishlistFromData(btn){ toggleWishlist(btn.dataset.pid); }
+  function submitReviewFromData(btn) { submitReview(btn.dataset.pid); }
+
+  let selRating = 0;
+  function chQty(d) { const i=document.getElementById('qtyInp'); i.value=Math.max(1,Math.min(parseInt(i.max)||99,parseInt(i.value||1)+d)); }
+  function showToast(msg,type=''){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+type;setTimeout(()=>t.className='toast',2500);}
+  async function addToCart(pid){
+    const qty=parseInt(document.getElementById('qtyInp').value)||1;
+    const btn=document.getElementById('addBtn');btn.textContent='Adding...';
+    const r=await fetch('/api/cart/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid,quantity:qty})});
+    const d=await r.json();
+    if(d.success){document.getElementById('cartBadge').textContent=d.cart_count;showToast('Added to cart','success');btn.textContent='Add to Cart';}
+    else showToast(d.error||'Error');
+  }
+  async function toggleWishlist(pid){
+    const btn=document.getElementById('wishBtn');
+    const r=await fetch('/api/wishlist/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid})});
+    const d=await r.json();
+    if(d.success){btn.classList.toggle('active',d.in_wishlist);btn.textContent=d.in_wishlist?'Saved':'Wishlist';showToast(d.in_wishlist?'Saved to wishlist':'Removed from wishlist');}
+  }
+  function toggleReviewForm(){document.getElementById('reviewForm').classList.toggle('open');}
+  document.getElementById('starsPick').querySelectorAll('span').forEach(s=>{
+    s.onclick=()=>{selRating=parseInt(s.dataset.v);document.querySelectorAll('#starsPick span').forEach((el,i)=>el.classList.toggle('on',i<selRating));};
+    s.onmouseenter=()=>{const v=parseInt(s.dataset.v);document.querySelectorAll('#starsPick span').forEach((el,i)=>el.style.color=i<v?'#1A1C23':'#ddd');};
+  });
+  document.getElementById('starsPick').onmouseleave=()=>{document.querySelectorAll('#starsPick span').forEach((el,i)=>el.style.color=i<selRating?'#1A1C23':'#ddd');};
+  async function submitReview(pid){
+    if(!selRating){showToast('Please select a star rating');return;}
+    const comment=document.getElementById('revText').value.trim();
+    const r=await fetch('/api/review/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_id:pid,rating:selRating,comment})});
+    const d=await r.json();
+    if(d.success){showToast('Review posted!','success');setTimeout(()=>location.reload(),900);}
+    else showToast(d.error||'Error');
+  }
+</script>
+</body>
+</html>
+
+

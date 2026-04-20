@@ -1,0 +1,690 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Shopy â€” Sign In</title>
+
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <style>
+    :root {
+      --charcoal: #1A1C23;
+      --muted: #8E9BAE;
+      --sand: #E1D9BC;
+      --ivory: #F0F0DB;
+      --accent:#1A1C23;
+      --retailer: #1A1C23;
+      --card-radius: 40px;
+      --shadow: 0 30px 60px rgba(0, 0, 0, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .fullscreen-wrapper {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--ivory) 0%, #FFFFFF 50%, var(--sand) 100%);
+      position: relative;
+      color: var(--charcoal);
+      overflow: hidden;
+    }
+
+    /* BACKGROUND GLOW */
+    .bg-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--sand) 0%, transparent 70%);
+      filter: blur(100px);
+      opacity: 0.3;
+      z-index: 1;
+      animation: floatGlow 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes floatGlow {
+      0%  { transform: translate(-250px, 150px); }
+      100%{ transform: translate(250px, -150px); }
+    }
+
+    .container {
+      width: 90%;
+      max-width: 840px;
+      height: 540px;
+      display: flex;
+      border-radius: var(--card-radius);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: var(--shadow);
+      z-index: 10;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* LEFT PANEL */
+    .left {
+      width: 42%;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: linear-gradient(160deg, rgba(225, 217, 188, 0.2) 0%, transparent 100%);
+    }
+
+    .text-stage {
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-bottom: 20px;
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+
+    .text-stage.fade-out {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .text-stage.fade-in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .left h1 {
+      font-size: 34px;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.1;
+    }
+
+    .left p {
+      font-size: 14px;
+      color: rgba(26, 28, 35, 0.7);
+      line-height: 1.6;
+    }
+
+    /* Role indicator pill on left panel */
+    .left-role-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 14px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      width: fit-content;
+      transition: all 0.3s;
+    }
+    .left-role-pill.customer {
+      background: rgba(26,28,35,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(26,28,35,0.2);
+    }
+    .left-role-pill.retailer {
+      background: rgba(26,28,35,0.10);
+      color: var(--retailer);
+      border: 1px solid rgba(26,28,35,0.10);
+    }
+    .pill-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%; flex-shrink: 0;
+    }
+    .left-role-pill.customer .pill-dot { background: var(--accent); }
+    .left-role-pill.retailer .pill-dot { background: var(--retailer); }
+
+    .btn-toggle {
+      padding: 12px 24px;
+      border-radius: 14px;
+      background: var(--charcoal);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      width: fit-content;
+      transform: translateY(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .btn-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    /* RIGHT PANEL */
+    .right {
+      width: 58%;
+      padding: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 340px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+
+    .brand-section img {
+      width: 35px;
+      height: 35px;
+    }
+
+    .brand-section h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    /* TABS */
+    .tab-nav {
+      display: flex;
+      background: #F4F5F0;
+      padding: 5px;
+      border-radius: 16px;
+      margin-bottom: 18px;
+    }
+
+    .tab-item {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--muted);
+      transform: translateY(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .tab-item.active {
+      background: #fff;
+      color: var(--charcoal);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    /* ROLE SELECTOR â€” identical to tab-nav/tab-item */
+    .role-section-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .role-selector {
+      display: flex;
+      background: #F4F5F0;
+      padding: 5px;
+      border-radius: 16px;
+      margin-bottom: 14px;
+      gap: 0;
+    }
+    .role-sel-btn {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--muted);
+      transform: translateY(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+    .role-sel-btn .rdot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #C9D0DB;
+      flex-shrink: 0;
+      transition: 0.2s;
+    }
+
+    /* Customer selected */
+    .role-sel-btn.sel-customer {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .role-sel-btn.sel-customer .rdot { background: var(--accent); }
+
+    /* Retailer selected */
+    .role-sel-btn.sel-retailer {
+      background: #fff;
+      color: var(--retailer);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .role-sel-btn.sel-retailer .rdot { background: var(--retailer); }
+
+    /* SLIDER */
+    .overflow-wrapper {
+      overflow: hidden;
+      width: 100%;
+      padding-bottom: 10px;
+    }
+
+    .form-slider {
+      display: flex;
+      width: 200%;
+      transition: transform 0.5s cubic-bezier(.22, .9, .3, 1);
+    }
+
+    .form-page {
+      flex: 0 0 50%;
+      padding: 0 10px 10px 10px;
+    }
+
+    /* INPUTS */
+    .input-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .input-group {
+      margin-bottom: 11px;
+      flex: 1;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid #EAEBE6;
+      background: #F9FAFB;
+      font-size: 14px;
+      color: var(--charcoal);
+      outline: none;
+      transition: 0.2s;
+    }
+
+    .input-group input:focus {
+      border-color: var(--sand);
+      background: #fff;
+      box-shadow: 0 0 0 2px rgba(225, 217, 188, 0.4);
+    }
+
+    .pass-toggle {
+      position: absolute;
+      right: 14px;
+      cursor: pointer;
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      user-select: none;
+    }
+
+    /* BUTTON */
+    .primary-btn {
+      width: 100%;
+      padding: 15px;
+      border-radius: 16px;
+      background: var(--charcoal);
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      min-height: 52px;
+      transform: translateY(0);
+      backface-visibility: hidden;
+      will-change: transform;
+      transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+    }
+
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 24px rgba(0, 0, 0, 0.14);
+    }
+
+    .primary-btn.retailer-btn {
+      background: linear-gradient(135deg, #1A1C23, #1A1C23);
+    }
+
+    .form-error {
+      background: rgba(220, 53, 69, 0.09);
+      color: #c0392b;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    /* MOBILE */
+    @media (max-width: 850px) {
+      .container {
+        flex-direction: column;
+        height: auto;
+        max-height: 97vh;
+        width: 85%;
+        border-radius: 32px;
+        margin: 0;
+      }
+
+      .right {
+        width: 100%;
+        padding: 22px 22px 12px 22px;
+        order: 1;
+        flex: 0;
+        border-radius: 32px 32px 0 0;
+      }
+
+      .left {
+        width: 100%;
+        padding: 10px 22px 18px 22px;
+        text-align: center;
+        order: 2;
+        flex: 0;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(225, 217, 188, 0.1) 100%);
+        border-radius: 0 0 32px 32px;
+      }
+
+      .text-stage { min-height: auto; margin-bottom: 5px; }
+      .left h1 { font-size: 15px; margin-bottom: 2px; }
+      .left p { font-size: 10px; margin-bottom: 4px; line-height: 1.3; }
+      .left-role-pill { margin: 4px auto; }
+      .btn-toggle { margin: 8px auto 0; padding: 7px 16px; font-size: 11px; }
+      .brand-section { margin-bottom: 12px; justify-content: center; gap: 8px; }
+      .brand-section img { width: 24px; height: 24px; }
+      .brand-section h3 { font-size: 13px; }
+      .tab-nav { margin-bottom: 14px; padding: 4px; }
+      .tab-item { padding: 8px; font-size: 11px; }
+      .role-selector { gap: 8px; margin-bottom: 10px; }
+      .role-sel-btn { padding: 9px 6px; font-size: 12px; }
+      .input-group { margin-bottom: 10px; }
+      .input-group input { padding: 12px 14px; font-size: 13px; border-radius: 12px; }
+      .input-group label { font-size: 9px; margin-bottom: 3px; }
+      .primary-btn { padding: 12px; font-size: 14px; min-height: 48px; margin-top: 5px; box-shadow: none; }
+      .input-row { flex-direction: column; gap: 0; }
+      .overflow-wrapper { padding-bottom: 5px; }
+    }
+
+    @media (max-height: 620px) and (max-width: 850px) {
+      .container { max-height: 98vh; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="fullscreen-wrapper">
+
+    <div class="bg-glow"></div>
+
+    <div class="container">
+
+      <!-- LEFT -->
+      <div class="left">
+        <div class="text-stage" id="textStage">
+          <h1 id="leftTitle">Hello,<br>Welcome!</h1>
+          <p id="leftDesc">Sign in to continue shopping your favourite items.</p>
+          <div class="left-role-pill customer" id="leftPill">
+            <div class="pill-dot"></div>
+            <span id="pillText">Shopping as Customer</span>
+          </div>
+        </div>
+        <button class="btn-toggle" id="toggleBtn">Home Page</button>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="right">
+        <div class="card">
+
+          <div class="brand-section">
+            <img src="{{ url_for('static', filename='Images/chit_chat.png') }}" alt="Shopy Logo">
+            <h3>Shopy</h3>
+          </div>
+
+          <div class="tab-nav">
+            <div class="tab-item active" id="tabLogin">LOGIN</div>
+            <div class="tab-item" id="tabRegister">REGISTER</div>
+          </div>
+
+          <div class="overflow-wrapper">
+            <div class="form-slider" id="slider">
+
+              <!-- â”€â”€ LOGIN â”€â”€ -->
+              <div class="form-page">
+                <form method="POST" action="/login">
+                  {% if request.args.get('error') and request.args.get('tab') != 'register' %}
+                  <div class="form-error">{{ request.args.get('error') | e }}</div>
+                  {% endif %}
+
+                  <div class="role-section-label">I am a</div>
+                  <div class="role-selector">
+                    <button type="button" class="role-sel-btn sel-customer"
+                            id="lBtnCustomer" onclick="setLoginRole('customer')">
+                      <div class="rdot"></div> Customer
+                    </button>
+                    <button type="button" class="role-sel-btn"
+                            id="lBtnRetailer" onclick="setLoginRole('retailer')">
+                      <div class="rdot"></div> Retailer
+                    </button>
+                  </div>
+                  <input type="hidden" name="role" id="lRoleInput" value="customer">
+
+                  <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" name="email" placeholder="you@email.com" required>
+                  </div>
+                  <div class="input-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                      <input type="password" name="password" id="loginPass" placeholder="Enter password" required>
+                      <span class="pass-toggle" onclick="togglePassword()">SHOW</span>
+                    </div>
+                  </div>
+                  <button type="submit" class="primary-btn" id="loginBtn">Log In</button>
+                </form>
+              </div>
+
+              <!-- â”€â”€ REGISTER â”€â”€ -->
+              <div class="form-page">
+                <form method="POST" action="/register">
+                  {% if request.args.get('error') and request.args.get('tab') == 'register' %}
+                  <div class="form-error">{{ request.args.get('error') | e }}</div>
+                  {% endif %}
+
+                  <div class="role-section-label">Register as</div>
+                  <div class="role-selector">
+                    <button type="button" class="role-sel-btn sel-customer"
+                            id="rBtnCustomer" onclick="setRegRole('customer')">
+                      <div class="rdot"></div> Customer
+                    </button>
+                    <button type="button" class="role-sel-btn"
+                            id="rBtnRetailer" onclick="setRegRole('retailer')">
+                      <div class="rdot"></div> Retailer
+                    </button>
+                  </div>
+                  <input type="hidden" name="role" id="rRoleInput" value="customer">
+
+                  <div class="input-row">
+                    <div class="input-group">
+                      <label>Username</label>
+                      <input type="text" name="username" placeholder="Username" required>
+                    </div>
+                    <div class="input-group">
+                      <label>Email</label>
+                      <input type="email" name="email" placeholder="you@email.com" required>
+                    </div>
+                  </div>
+                  <div class="input-group">
+                    <label>Set Password</label>
+                    <input type="password" name="password" placeholder="Password" required>
+                  </div>
+                  <button type="submit" class="primary-btn" id="registerBtn">Create Account</button>
+                </form>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    const slider      = document.getElementById('slider');
+    const tabLogin    = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+    const toggleBtn   = document.getElementById('toggleBtn');
+    const leftTitle   = document.getElementById('leftTitle');
+    const leftDesc    = document.getElementById('leftDesc');
+    const leftPill    = document.getElementById('leftPill');
+    const pillText    = document.getElementById('pillText');
+    const textStage   = document.getElementById('textStage');
+
+    let isRegister = false;
+    let lRole = 'customer';
+    let rRole = 'customer';
+
+    /* ---- Role selectors ---- */
+    function setLoginRole(role) {
+      lRole = role;
+      document.getElementById('lRoleInput').value = role;
+      document.getElementById('lBtnCustomer').className = 'role-sel-btn' + (role === 'customer' ? ' sel-customer' : '');
+      document.getElementById('lBtnRetailer').className = 'role-sel-btn' + (role === 'retailer' ? ' sel-retailer' : '');
+      document.getElementById('loginBtn').className    = 'primary-btn' + (role === 'retailer' ? ' retailer-btn' : '');
+      if (!isRegister) updatePill(role);
+    }
+
+    function setRegRole(role) {
+      rRole = role;
+      document.getElementById('rRoleInput').value = role;
+      document.getElementById('rBtnCustomer').className = 'role-sel-btn' + (role === 'customer' ? ' sel-customer' : '');
+      document.getElementById('rBtnRetailer').className = 'role-sel-btn' + (role === 'retailer' ? ' sel-retailer' : '');
+      document.getElementById('registerBtn').className  = 'primary-btn' + (role === 'retailer' ? ' retailer-btn' : '');
+      if (isRegister) updatePill(role);
+    }
+
+    function updatePill(role) {
+      leftPill.className = 'left-role-pill ' + role;
+      if (role === 'retailer') {
+        pillText.textContent = isRegister ? 'Registering as Retailer' : 'Signing in as Retailer';
+      } else {
+        pillText.textContent = isRegister ? 'Registering as Customer' : 'Shopping as Customer';
+      }
+    }
+
+    /* ---- Slide animation ---- */
+    function animateTextChange(callback) {
+      textStage.classList.add('fade-out');
+      setTimeout(() => {
+        callback();
+        textStage.classList.remove('fade-out');
+        textStage.classList.add('fade-in');
+        setTimeout(() => textStage.classList.remove('fade-in'), 400);
+      }, 300);
+    }
+
+    function setMode(register) {
+      isRegister = register;
+      slider.style.transform = register ? 'translateX(-50%)' : 'translateX(0%)';
+      tabLogin.classList.toggle('active', !register);
+      tabRegister.classList.toggle('active', register);
+
+      const role = register ? rRole : lRole;
+      animateTextChange(() => {
+        if (register) {
+          leftTitle.innerHTML = 'Start Your<br>Story.';
+          leftDesc.textContent = role === 'retailer'
+            ? 'Open your store and reach customers today.'
+            : 'Discover amazing products from verified retailers.';
+        } else {
+          leftTitle.innerHTML = 'Hello,<br>Welcome!';
+          leftDesc.textContent = role === 'retailer'
+            ? 'Sign in to manage your store and orders.'
+            : 'Sign in to continue shopping your favourite items.';
+        }
+        updatePill(role);
+      });
+    }
+
+    tabLogin.onclick    = () => setMode(false);
+    tabRegister.onclick = () => setMode(true);
+    toggleBtn.onclick   = () => {
+      window.location.href = '/landing';
+    };
+
+    function togglePassword() {
+      const input  = document.getElementById('loginPass');
+      const toggle = document.querySelector('.pass-toggle');
+      if (input.type === 'password') { input.type = 'text';     toggle.textContent = 'HIDE'; }
+      else                           { input.type = 'password'; toggle.textContent = 'SHOW'; }
+    }
+
+    // Init
+    setMode(false);
+    (function () {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('tab') === 'register') setMode(true);
+    })();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,734 @@
+<style>
+/* ============================================================
+   REELS — Instagram / TikTok Full-Screen Vertical Feed
+   ============================================================ */
+
+/* Reset section for full-screen reels */
+#section-reels{padding:0!important;overflow:hidden!important;position:relative;background:#000}
+
+/* Header overlay */
+#reels-section-header{
+  position:absolute;top:0;left:0;right:0;z-index:20;
+  padding:14px 16px;
+  background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,transparent 100%);
+  display:flex;justify-content:space-between;align-items:center;
+  pointer-events:none;
+}
+#reels-section-header>*{pointer-events:auto}
+#reels-section-header .section-title{color:#fff;margin:0;font-size:1.2rem;font-weight:800;letter-spacing:-.3px}
+#reels-section-header .upload-section-btn{
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+  backdrop-filter:blur(8px);color:#fff;
+  padding:8px 16px;border-radius:20px;font-weight:700;font-size:.8rem;
+  cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;
+}
+#reels-section-header .upload-section-btn:hover{background:rgba(255,255,255,.28)}
+#reels-section-header .upload-section-btn svg{fill:currentColor}
+
+/* Hide old desktop grid */
+.reels-feed{display:none!important}
+
+/* ====== SNAP-SCROLL CONTAINER ====== */
+#reelsMobileFeed{
+  display:flex!important;
+  flex-direction:column;
+  align-items:center;
+  overflow-y:scroll;
+  scroll-snap-type:y mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  height:100%;
+  padding:0;gap:0;
+}
+#reelsMobileFeed::-webkit-scrollbar{display:none}
+
+/* ====== REEL CARD ====== */
+.reel-card-v2{
+  position:relative;
+  background:#000;
+  overflow:hidden;
+  scroll-snap-align:start;
+  scroll-snap-stop:always;
+  flex-shrink:0;
+  width:100%;
+}
+
+/* Video layer */
+.rv2-video-wrap{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  background:#000;
+}
+.rv2-video-wrap video{
+  width:100%;height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* Tap-to-toggle play/pause overlay */
+.rv2-tap-zone{
+  position:absolute;inset:0;z-index:2;
+  cursor:pointer;
+}
+
+/* Play/pause icon center */
+.rv2-play-indicator{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;
+  z-index:3;pointer-events:none;
+  transition:transform .15s ease;
+}
+.rv2-play-indicator.show{
+  transform:translate(-50%,-50%) scale(1);
+  animation:rv2FadeOut .8s .15s ease forwards;
+}
+@keyframes rv2FadeOut{to{opacity:0;transform:translate(-50%,-50%) scale(1.2)}}
+.rv2-play-indicator svg{width:36px;height:36px;fill:#fff}
+
+/* ====== BOTTOM GRADIENT ====== */
+.rv2-bottom-gradient{
+  position:absolute;bottom:0;left:0;right:0;
+  height:280px;
+  background:linear-gradient(0deg,rgba(0,0,0,.7) 0%,rgba(0,0,0,.35) 45%,transparent 100%);
+  z-index:3;pointer-events:none;
+}
+
+/* ====== BOTTOM LEFT INFO ====== */
+.rv2-info{
+  position:absolute;bottom:20px;left:14px;right:72px;
+  z-index:5;color:#fff;
+}
+.rv2-user-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.rv2-username{font-weight:800;font-size:.95rem;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.rv2-follow-btn{
+  background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);
+  color:#fff;font-size:.72rem;font-weight:700;
+  padding:5px 14px;border-radius:6px;cursor:pointer;
+  backdrop-filter:blur(6px);transition:all .2s;
+}
+.rv2-follow-btn:hover{background:rgba(255,255,255,.35)}
+.rv2-follow-btn.following{background:transparent;border-color:rgba(255,255,255,.25)}
+.rv2-caption{
+  font-size:.82rem;line-height:1.45;color:rgba(255,255,255,.92);
+  text-shadow:0 1px 3px rgba(0,0,0,.4);
+  display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  cursor:pointer;
+  transition:all .2s;
+}
+.rv2-caption.expanded{-webkit-line-clamp:unset;line-clamp:unset}
+.rv2-time{font-size:.68rem;color:rgba(255,255,255,.55);margin-top:4px}
+
+/* ====== RIGHT ACTION BAR ====== */
+.rv2-actions{
+  position:absolute;bottom:20px;right:10px;
+  display:flex;flex-direction:column;align-items:center;gap:18px;
+  z-index:5;
+}
+.rv2-action{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;transition:transform .15s;
+}
+.rv2-action:active{transform:scale(.9)}
+.rv2-action-icon{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.12);
+  backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.rv2-action:hover .rv2-action-icon{background:rgba(255,255,255,.22)}
+.rv2-action-icon svg{width:22px;height:22px;fill:#fff;transition:fill .2s}
+.rv2-action-label{font-size:.68rem;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.4)}
+.rv2-action.liked .rv2-action-icon{background:rgba(255,59,48,.2)}
+.rv2-action.liked .rv2-action-icon svg{fill:#FF3B30}
+.rv2-action.liked .rv2-action-label{color:#FF3B30}
+
+/* Profile pic in action bar */
+.rv2-action-pfp{
+  width:44px;height:44px;border-radius:50%;overflow:hidden;
+  border:2px solid #fff;
+  cursor:pointer;
+}
+.rv2-action-pfp img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* Delete button */
+.rv2-delete{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,59,48,.15);backdrop-filter:blur(8px);
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.rv2-delete:hover{background:rgba(255,59,48,.35)}
+.rv2-delete svg{width:20px;height:20px;fill:#FF6B6B}
+
+/* ====== DOUBLE-TAP HEART ANIMATION ====== */
+.rv2-heart-anim{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0);
+  z-index:10;pointer-events:none;
+  opacity:0;
+}
+.rv2-heart-anim.pop{
+  animation:rv2HeartPop .9s ease forwards;
+}
+@keyframes rv2HeartPop{
+  0%{transform:translate(-50%,-50%) scale(0);opacity:1}
+  15%{transform:translate(-50%,-50%) scale(1.3);opacity:1}
+  30%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  80%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(1.1);opacity:0}
+}
+.rv2-heart-anim svg{width:100px;height:100px;fill:#FF3B30;filter:drop-shadow(0 4px 20px rgba(255,59,48,.5))}
+
+/* ====== COMMENTS PANEL ====== */
+.rv2-comments-overlay{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.5);
+  backdrop-filter:blur(4px);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.rv2-comments-overlay.active{display:flex}
+.rv2-comments-sheet{
+  width:min(500px,100%);
+  max-height:65vh;
+  background:#1a1a1a;
+  border-radius:20px 20px 0 0;
+  display:flex;flex-direction:column;
+  animation:rv2SlideUp .3s ease;
+  overflow:hidden;
+}
+@keyframes rv2SlideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+
+.rv2-comments-header{
+  padding:16px 20px 12px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.rv2-comments-header h3{color:#fff;font-size:1rem;font-weight:700;margin:0}
+.rv2-comments-close{
+  background:rgba(255,255,255,.1);border:none;
+  width:32px;height:32px;border-radius:50%;
+  color:#fff;font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;
+}
+.rv2-comments-close:hover{background:rgba(255,255,255,.2)}
+
+.rv2-comments-list{
+  flex:1;overflow-y:auto;padding:12px 16px;
+  display:flex;flex-direction:column;gap:14px;
+  scrollbar-width:none;
+}
+.rv2-comments-list::-webkit-scrollbar{display:none}
+
+.rv2-comment-item{display:flex;gap:10px;align-items:flex-start}
+.rv2-comment-avatar{
+  width:34px;height:34px;border-radius:50%;overflow:hidden;
+  background:rgba(255,255,255,.1);flex-shrink:0;
+}
+.rv2-comment-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.rv2-comment-body{flex:1;min-width:0}
+.rv2-comment-user{font-size:.78rem;font-weight:700;color:#fff;margin-bottom:2px}
+.rv2-comment-text{font-size:.82rem;color:rgba(255,255,255,.85);line-height:1.4;word-break:break-word}
+.rv2-comment-meta{display:flex;align-items:center;gap:12px;margin-top:4px}
+.rv2-comment-time{font-size:.65rem;color:rgba(255,255,255,.4)}
+
+.rv2-comments-empty{
+  text-align:center;padding:40px 20px;
+  color:rgba(255,255,255,.4);font-size:.85rem;
+}
+
+/* Comment input */
+.rv2-comment-input-row{
+  padding:10px 16px 16px;
+  border-top:1px solid rgba(255,255,255,.1);
+  display:flex;gap:10px;align-items:center;
+  flex-shrink:0;
+  background:#1a1a1a;
+}
+.rv2-comment-input{
+  flex:1;padding:10px 16px;border-radius:22px;
+  border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08);
+  font-size:.82rem;font-family:inherit;
+  outline:none;color:#fff;
+  transition:all .2s;
+}
+.rv2-comment-input::placeholder{color:rgba(255,255,255,.35)}
+.rv2-comment-input:focus{border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.12)}
+.rv2-comment-send{
+  width:38px;height:38px;border-radius:50%;
+  background:#FF3B30;border:none;cursor:pointer;
+  color:#fff;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .2s;
+}
+.rv2-comment-send:hover{transform:scale(1.08);box-shadow:0 2px 12px rgba(255,59,48,.4)}
+.rv2-comment-send svg{width:18px;height:18px;fill:#fff}
+
+/* ====== PROGRESS BAR (top) ====== */
+.rv2-progress{
+  position:absolute;top:0;left:0;right:0;
+  height:2px;z-index:15;
+  background:rgba(255,255,255,.15);
+}
+.rv2-progress-bar{
+  height:100%;background:#fff;
+  width:0;transition:width .3s linear;
+}
+
+/* ====== RESPONSIVE ====== */
+@media(max-width:980px){
+  #section-reels{padding:0!important;overflow:hidden!important;padding-top:0!important;padding-bottom:0!important;height:100dvh!important;height:100vh!important;box-sizing:border-box!important}
+  #reelsMobileFeed{height:100%}
+  .reel-card-v2{width:100%;height:100%;scroll-snap-align:start;flex-shrink:0}
+  .rv2-info{bottom:90px}
+  .rv2-actions{bottom:90px}
+  #reels-section-header{top:12px}
+  .rv2-comments-overlay{align-items:flex-end}
+  .rv2-comments-sheet{
+    width:100%;
+    max-height:65vh;
+    border-radius:20px 20px 0 0;
+  }
+  .rv2-comments-header{padding-top:calc(16px + env(safe-area-inset-top))}
+  .rv2-comments-list{padding-bottom:calc(12px + env(safe-area-inset-bottom));overscroll-behavior:contain}
+  .rv2-comment-input-row{padding-bottom:calc(16px + env(safe-area-inset-bottom))}
+}
+@media(min-width:981px){
+  #reelsMobileFeed{height:calc(100vh - var(--header-height,60px) - 0px)}
+  .reel-card-v2{
+    width:min(420px,100%);
+    height:calc(100vh - var(--header-height,60px) - 0px);
+    border-radius:16px;
+    margin:0;
+  }
+  .rv2-info{bottom:20px}
+  .rv2-actions{bottom:20px}
+  .rv2-bottom-gradient{border-radius:0 0 16px 16px}
+}
+
+/* ====== Empty state ====== */
+.rv2-empty{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;color:rgba(255,255,255,.5);gap:12px;padding:40px;text-align:center;
+}
+.rv2-empty svg{width:56px;height:56px;stroke:rgba(255,255,255,.3);fill:none;stroke-width:1.2}
+.rv2-empty h3{color:rgba(255,255,255,.7);font-size:1.1rem;margin:0}
+.rv2-empty p{font-size:.85rem;margin:0;color:rgba(255,255,255,.4)}
+
+/* Muted icon */
+.rv2-muted-icon{
+  position:absolute;top:60px;right:14px;z-index:6;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(0,0,0,.4);backdrop-filter:blur(6px);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+}
+.rv2-muted-icon:hover{background:rgba(0,0,0,.6)}
+.rv2-muted-icon svg{width:18px;height:18px;fill:#fff}
+</style>
+
+<!-- ====== SECTION: REELS ====== -->
+<div class="page-section" id="section-reels">
+  <div id="reels-section-header">
+    <div class="section-title" style="margin:0">Reels</div>
+    <button class="upload-section-btn" onclick="triggerUpload('reel')">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      Upload
+    </button>
+  </div>
+  <div class="reels-feed" id="reelsFeed"></div>
+  <div id="reelsMobileFeed"></div>
+</div>
+
+<!-- ====== COMMENTS PANEL (shared overlay) ====== -->
+<div class="rv2-comments-overlay" id="rv2CommentsOverlay">
+  <div class="rv2-comments-sheet">
+    <div class="rv2-comments-header">
+      <h3>Comments <span id="rv2CommentCount" style="font-weight:400;font-size:.82rem;color:rgba(255,255,255,.4)"></span></h3>
+      <button class="rv2-comments-close" onclick="closeReelCommentsPanel()">✕</button>
+    </div>
+    <div class="rv2-comments-list" id="rv2CommentsList"></div>
+    <div class="rv2-comment-input-row">
+      <input class="rv2-comment-input" id="rv2CommentInput" placeholder="Add a comment..." maxlength="500">
+      <button class="rv2-comment-send" id="rv2CommentSendBtn" onclick="submitReelComment()">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let reelsData = [];
+let _rv2CommentReelIdx = -1;
+let _rv2Muted = true;
+let _rv2Observer = null;
+let _rv2LastTap = {};
+
+function pfpFor(r) {
+  return (r.profile_pic && r.profile_pic !== 'default_profile.png')
+    ? '<img src="/static/uploads/' + r.profile_pic + '">'
+    : '<img src="/static/Images/profile.png">';
+}
+function pfpSrc(r) {
+  return (r.profile_pic && r.profile_pic !== 'default_profile.png')
+    ? '/static/uploads/' + r.profile_pic
+    : '/static/Images/profile.png';
+}
+function escHtml(s) {
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+/* ============ LOAD REELS ============ */
+async function loadReels() {
+  try {
+    const res = await fetch('/api/reels');
+    reelsData = await res.json();
+    const feed = document.getElementById('reelsMobileFeed');
+
+    if (!reelsData.length) {
+      feed.innerHTML = '<div class="rv2-empty">'
+        + '<svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/>'
+        + '<line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/>'
+        + '<line x1="2" y1="12" x2="22" y2="12"/></svg>'
+        + '<h3>No reels yet</h3><p>Be the first to share a short video!</p></div>';
+      return;
+    }
+
+    feed.innerHTML = '';
+
+    reelsData.forEach((r, idx) => {
+      const card = document.createElement('div');
+      card.className = 'reel-card-v2';
+      card.id = 'rv2-' + idx;
+      card.dataset.idx = idx;
+
+      const isMine = (r.user_id == myId);
+
+      card.innerHTML =
+        /* Video */
+        '<div class="rv2-video-wrap">'
+        + '<video src="' + r.video_url + '" playsinline preload="' + (idx < 2 ? 'auto' : 'metadata') + '" loop muted></video>'
+        + '</div>'
+        /* Tap zone */
+        + '<div class="rv2-tap-zone" data-idx="' + idx + '"></div>'
+        /* Play/pause indicator */
+        + '<div class="rv2-play-indicator" id="rv2-play-' + idx + '">'
+        + '<svg viewBox="0 0 24 24"><path id="rv2-play-icon-' + idx + '" d="M8 5v14l11-7z"/></svg></div>'
+        /* Double-tap heart */
+        + '<div class="rv2-heart-anim" id="rv2-heart-' + idx + '">'
+        + '<svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>'
+        /* Progress bar */
+        + '<div class="rv2-progress"><div class="rv2-progress-bar" id="rv2-prog-' + idx + '"></div></div>'
+        /* Mute toggle */
+        + '<div class="rv2-muted-icon" onclick="event.stopPropagation();toggleMute(' + idx + ')" id="rv2-mute-' + idx + '">'
+        + '<svg viewBox="0 0 24 24"><path id="rv2-mute-icon-' + idx + '" d="M16.5 12A4.5 4.5 0 0 0 14 8.01V4.65l-5 4.17H5v6.36h4l5 4.17v-3.36A4.5 4.5 0 0 0 16.5 12zM19 12c0 2.48-1.51 4.6-3.66 5.5v2.13C18.89 18.55 21 15.53 21 12s-2.11-6.55-5.66-7.63v2.13C17.49 7.4 19 9.52 19 12z"/></svg></div>'
+        /* Bottom gradient */
+        + '<div class="rv2-bottom-gradient"></div>'
+        /* Bottom left info */
+        + '<div class="rv2-info">'
+        + '<div class="rv2-user-row">'
+        + '<span class="rv2-username">' + escHtml(r.username) + '</span>'
+        + (!isMine ? '<button class="rv2-follow-btn" data-uid="' + r.user_id + '" onclick="event.stopPropagation();toggleFollow(this,' + r.user_id + ')">Follow</button>' : '')
+        + '</div>'
+        + (r.caption ? '<div class="rv2-caption" onclick="event.stopPropagation();this.classList.toggle(\'expanded\')">' + escHtml(r.caption) + '</div>' : '')
+        + '<div class="rv2-time">' + getTimeAgo(new Date(r.created_at)) + '</div>'
+        + '</div>'
+        /* Right action bar */
+        + '<div class="rv2-actions">'
+        + '<div class="rv2-action-pfp" onclick="event.stopPropagation();viewProfile(' + r.user_id + ')">'
+        + '<img src="' + pfpSrc(r) + '">'
+        + '</div>'
+        /* Like */
+        + '<div class="rv2-action ' + (r.liked_by_me ? 'liked' : '') + '" id="rv2-like-' + idx + '" onclick="event.stopPropagation();toggleLike(' + idx + ')">'
+        + '<div class="rv2-action-icon"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>'
+        + '<span class="rv2-action-label" id="rv2-lc-' + idx + '">' + r.like_count + '</span></div>'
+        /* Comment */
+        + '<div class="rv2-action" onclick="event.stopPropagation();openReelCommentsPanel(' + idx + ')">'
+        + '<div class="rv2-action-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg></div>'
+        + '<span class="rv2-action-label" id="rv2-cc-' + idx + '">' + (r.comment_count || 0) + '</span></div>'
+        + '</div>';
+
+      feed.appendChild(card);
+    });
+
+    /* Set up tap/double-tap handlers */
+    feed.querySelectorAll('.rv2-tap-zone').forEach(zone => {
+      zone.addEventListener('click', function(e) {
+        const idx = parseInt(this.dataset.idx);
+        const now = Date.now();
+        if (_rv2LastTap[idx] && now - _rv2LastTap[idx] < 350) {
+          doubleTapLike(idx);
+          _rv2LastTap[idx] = 0;
+        } else {
+          _rv2LastTap[idx] = now;
+          setTimeout(() => {
+            if (_rv2LastTap[idx] && Date.now() - _rv2LastTap[idx] >= 340) {
+              togglePlay(idx);
+            }
+          }, 350);
+        }
+      });
+    });
+
+    /* Set up IntersectionObserver for auto-play */
+    if (_rv2Observer) _rv2Observer.disconnect();
+    _rv2Observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const vid = entry.target.querySelector('.rv2-video-wrap video');
+        if (!vid) return;
+        if (entry.isIntersecting) {
+          vid.muted = _rv2Muted;
+          vid.play().catch(() => {});
+          trackProgress(parseInt(entry.target.dataset.idx));
+          /* Preload next */
+          const nextIdx = parseInt(entry.target.dataset.idx) + 1;
+          if (nextIdx < reelsData.length) {
+            const nextVid = document.querySelector('#rv2-' + nextIdx + ' video');
+            if (nextVid && nextVid.preload === 'metadata') nextVid.preload = 'auto';
+          }
+        } else {
+          vid.pause();
+        }
+      });
+    }, { root: feed, threshold: 0.6 });
+
+    feed.querySelectorAll('.reel-card-v2').forEach(c => _rv2Observer.observe(c));
+
+    /* Update all mute icons */
+    updateMuteIcons();
+
+  } catch (e) {
+    console.error('loadReels error', e);
+  }
+}
+
+/* ============ VIDEO CONTROLS ============ */
+function togglePlay(idx) {
+  const card = document.getElementById('rv2-' + idx);
+  if (!card) return;
+  const vid = card.querySelector('video');
+  const indicator = document.getElementById('rv2-play-' + idx);
+  const iconEl = document.getElementById('rv2-play-icon-' + idx);
+  if (!vid) return;
+
+  indicator.classList.remove('show');
+  void indicator.offsetWidth;
+
+  if (vid.paused) {
+    vid.play().catch(() => {});
+    iconEl.setAttribute('d', 'M8 5v14l11-7z');
+  } else {
+    vid.pause();
+    iconEl.setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+  }
+  indicator.classList.add('show');
+}
+
+function toggleMute(idx) {
+  _rv2Muted = !_rv2Muted;
+  document.querySelectorAll('.reel-card-v2 video').forEach(v => v.muted = _rv2Muted);
+  updateMuteIcons();
+}
+
+function updateMuteIcons() {
+  const mutedPath = 'M16.5 12A4.5 4.5 0 0 0 14 8.01V4.65l-5 4.17H5v6.36h4l5 4.17v-3.36A4.5 4.5 0 0 0 16.5 12zM19 12c0 2.48-1.51 4.6-3.66 5.5v2.13C18.89 18.55 21 15.53 21 12s-2.11-6.55-5.66-7.63v2.13C17.49 7.4 19 9.52 19 12z';
+  const unmutedPath = 'M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8.01v7.98A4.47 4.47 0 0 0 16.5 12z';
+  document.querySelectorAll('[id^="rv2-mute-icon-"]').forEach(el => {
+    el.setAttribute('d', _rv2Muted ? unmutedPath : mutedPath);
+  });
+}
+
+function trackProgress(idx) {
+  const card = document.getElementById('rv2-' + idx);
+  if (!card) return;
+  const vid = card.querySelector('video');
+  const bar = document.getElementById('rv2-prog-' + idx);
+  if (!vid || !bar) return;
+
+  const update = () => {
+    if (vid.duration) {
+      bar.style.width = ((vid.currentTime / vid.duration) * 100) + '%';
+    }
+    if (!vid.paused) requestAnimationFrame(update);
+  };
+  vid.addEventListener('play', () => requestAnimationFrame(update), { once: false });
+  if (!vid.paused) requestAnimationFrame(update);
+}
+
+/* ============ DOUBLE-TAP LIKE ============ */
+function doubleTapLike(idx) {
+  const r = reelsData[idx]; if (!r) return;
+  /* Show heart animation */
+  const heart = document.getElementById('rv2-heart-' + idx);
+  heart.classList.remove('pop');
+  void heart.offsetWidth;
+  heart.classList.add('pop');
+
+  /* Like if not already liked */
+  if (!r.liked_by_me) {
+    toggleLike(idx);
+  }
+}
+
+/* ============ LIKE ============ */
+async function toggleLike(idx) {
+  const r = reelsData[idx]; if (!r) return;
+  try {
+    const res = await fetch('/api/reel/' + r.id + '/like', { method: 'POST' });
+    const data = await res.json();
+    r.liked_by_me = data.liked;
+    r.like_count = data.count;
+    const action = document.getElementById('rv2-like-' + idx);
+    if (action) action.classList.toggle('liked', data.liked);
+    const lc = document.getElementById('rv2-lc-' + idx);
+    if (lc) lc.textContent = data.count;
+  } catch (e) {}
+}
+
+/* ============ FOLLOW ============ */
+async function toggleFollow(btn, userId) {
+  const isFollowing = btn.classList.contains('following');
+  const endpoint = isFollowing ? '/api/unfollow' : '/api/follow';
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({user_id: userId})
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (isFollowing) {
+        btn.textContent = 'Follow';
+        btn.classList.remove('following');
+      } else {
+        btn.textContent = 'Following';
+        btn.classList.add('following');
+      }
+    }
+  } catch (e) {}
+}
+
+/* ============ VIEW PROFILE ============ */
+function viewProfile(userId) {
+  window.location.href = '/user_profile/' + userId;
+}
+
+/* ============ DELETE ============ */
+async function deleteReel(reelId) {
+  if (!confirm('Delete this reel?')) return;
+  try {
+    await fetch('/api/reel/' + reelId, { method: 'DELETE' });
+    loadReels();
+  } catch (e) {}
+}
+
+/* ============ COMMENTS PANEL ============ */
+async function openReelCommentsPanel(idx) {
+  _rv2CommentReelIdx = idx;
+  const r = reelsData[idx]; if (!r) return;
+
+  const overlay = document.getElementById('rv2CommentsOverlay');
+  const list = document.getElementById('rv2CommentsList');
+  const countEl = document.getElementById('rv2CommentCount');
+  countEl.textContent = '';
+
+  list.innerHTML = '<div class="rv2-comments-empty">Loading comments...</div>';
+  overlay.classList.add('active');
+
+  try {
+    const res = await fetch('/api/reel/' + r.id + '/comments');
+    const comments = await res.json();
+    countEl.textContent = comments.length ? '(' + comments.length + ')' : '';
+    renderComments(comments);
+  } catch (e) {
+    list.innerHTML = '<div class="rv2-comments-empty">Could not load comments</div>';
+  }
+}
+
+function renderComments(comments) {
+  const list = document.getElementById('rv2CommentsList');
+  list.innerHTML = '';
+  if (!comments.length) {
+    list.innerHTML = '<div class="rv2-comments-empty">No comments yet — be the first!</div>';
+    return;
+  }
+  comments.forEach(c => {
+    const pfp = (c.profile_pic && c.profile_pic !== 'default_profile.png')
+      ? '/static/uploads/' + c.profile_pic : '/static/Images/profile.png';
+    const row = document.createElement('div'); row.className = 'rv2-comment-item';
+    row.innerHTML = '<div class="rv2-comment-avatar"><img src="' + pfp + '"></div>'
+      + '<div class="rv2-comment-body">'
+      + '<div class="rv2-comment-user">' + escHtml(c.username) + '</div>'
+      + '<div class="rv2-comment-text">' + escHtml(c.comment) + '</div>'
+      + '<div class="rv2-comment-meta"><span class="rv2-comment-time">' + getTimeAgo(new Date(c.created_at)) + '</span></div>'
+      + '</div>';
+    list.appendChild(row);
+  });
+  list.scrollTop = list.scrollHeight;
+}
+
+function closeReelCommentsPanel() {
+  document.getElementById('rv2CommentsOverlay').classList.remove('active');
+  _rv2CommentReelIdx = -1;
+}
+
+async function submitReelComment() {
+  if (_rv2CommentReelIdx < 0) return;
+  const r = reelsData[_rv2CommentReelIdx]; if (!r) return;
+  const input = document.getElementById('rv2CommentInput');
+  const text = input.value.trim(); if (!text) return;
+
+  const btn = document.getElementById('rv2CommentSendBtn');
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/reel/' + r.id + '/comments', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({comment: text})
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.value = '';
+      const list = document.getElementById('rv2CommentsList');
+      /* Remove empty state if present */
+      const emptyEl = list.querySelector('.rv2-comments-empty');
+      if (emptyEl) list.innerHTML = '';
+
+      const pfp = (data.profile_pic && data.profile_pic !== 'default_profile.png')
+        ? '/static/uploads/' + data.profile_pic : '/static/Images/profile.png';
+      const row = document.createElement('div'); row.className = 'rv2-comment-item';
+      row.innerHTML = '<div class="rv2-comment-avatar"><img src="' + pfp + '"></div>'
+        + '<div class="rv2-comment-body">'
+        + '<div class="rv2-comment-user">' + escHtml(data.username) + '</div>'
+        + '<div class="rv2-comment-text">' + escHtml(text) + '</div>'
+        + '<div class="rv2-comment-meta"><span class="rv2-comment-time">just now</span></div></div>';
+      list.appendChild(row);
+      list.scrollTop = list.scrollHeight;
+
+      /* Update comment count on action bar */
+      r.comment_count = data.count || (r.comment_count || 0) + 1;
+      const cc = document.getElementById('rv2-cc-' + _rv2CommentReelIdx);
+      if (cc) cc.textContent = r.comment_count;
+      const countEl = document.getElementById('rv2CommentCount');
+      if (countEl) countEl.textContent = '(' + r.comment_count + ')';
+    }
+  } catch (e) {}
+  btn.disabled = false;
+}
+
+/* Enter to submit */
+document.getElementById('rv2CommentInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitReelComment(); }
+});
+
+/* Close overlay on background click */
+document.getElementById('rv2CommentsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('rv2CommentsOverlay')) closeReelCommentsPanel();
+});
+</script>

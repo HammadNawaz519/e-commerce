@@ -1,0 +1,1692 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>{{ username }} &mdash; Chit-Chat</title>
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    /* =============================================
+       DESIGN TOKENS  (matches chat.html exactly)
+    ============================================= */
+    :root {
+      --charcoal: #1A1C23;
+      --muted: #8E9BAE;
+      --sand: #E1D9BC;
+      --ivory: #F0F0DB;
+      --white: #FFFFFF;
+      --cream: #FAF9F6;
+      --glass: rgba(255, 255, 255, 0.85);
+      --glass-border: rgba(245, 244, 238, 0.5);
+      --blur: 24px;
+      --card-radius: 40px;
+      --item-radius: 24px;
+      --shadow-sm: 0 4px 20px rgba(26, 28, 35, 0.06);
+      --shadow-md: 0 8px 30px rgba(26, 28, 35, 0.08);
+      --shadow-lg: 0 20px 60px rgba(26, 28, 35, 0.12);
+      --shadow-premium: 0 12px 40px rgba(26, 28, 35, 0.08), 0 4px 12px rgba(26, 28, 35, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent
+    }
+
+    ::-webkit-scrollbar {
+      width: 5px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(26, 28, 35, .12);
+      border-radius: 10px
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(26, 28, 35, .22)
+    }
+
+    /* =============================================
+       PAGE SHELL
+    ============================================= */
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--ivory) 0%, var(--cream) 100%);
+      color: var(--charcoal);
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* =============================================
+       TOP NAV
+    ============================================= */
+    .pf-nav {
+      flex-shrink: 0;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      z-index: 100;
+    }
+
+    .pf-nav-back {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: var(--ivory);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: var(--charcoal);
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-sm);
+      transition: all .25s;
+    }
+
+    .pf-nav-back:hover {
+      background: var(--sand);
+      transform: translateX(-2px)
+    }
+
+    .pf-nav-title {
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: -.3px
+    }
+
+    .pf-nav-menu-wrap {
+      position: relative
+    }
+
+    .pf-nav-menu {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      background: var(--ivory);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.3rem;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+      transition: all .2s;
+      color: var(--charcoal);
+    }
+
+    .pf-nav-menu:hover {
+      background: var(--sand)
+    }
+
+    .pf-dropdown {
+      display: none;
+      position: absolute;
+      top: 48px;
+      right: 0;
+      background: var(--white);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      box-shadow: var(--shadow-lg);
+      min-width: 170px;
+      overflow: hidden;
+      z-index: 500;
+    }
+
+    .pf-dropdown.open {
+      display: block
+    }
+
+    .pf-dropdown a,
+    .pf-dropdown button {
+      display: block;
+      width: 100%;
+      padding: 13px 18px;
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--charcoal);
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s;
+    }
+
+    .pf-dropdown a:hover,
+    .pf-dropdown button:hover {
+      background: var(--ivory)
+    }
+
+    .pf-dropdown .danger {
+      color: #FF3B30
+    }
+
+    .pf-dropdown hr {
+      border: none;
+      border-top: 1px solid var(--glass-border);
+      margin: 4px 0
+    }
+
+    /* =============================================
+       BODY  — 2-col desktop, 1-col mobile
+    ============================================= */
+    .pf-body {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      overflow: hidden;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    /* =============================================
+       LEFT PANEL
+    ============================================= */
+    .pf-left {
+      width: 320px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      padding-bottom: 12px;
+    }
+
+    .pf-left::-webkit-scrollbar {
+      display: none
+    }
+
+    /* main card */
+    .pf-card {
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-premium);
+      padding: 28px 22px 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      text-align: center;
+    }
+
+    /* avatar */
+    .pf-avatar-wrap {
+      position: relative
+    }
+
+    .pf-avatar-ring {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      padding: 3px;
+      background: var(--glass-border);
+      cursor: pointer;
+      display: block;
+    }
+
+    .pf-avatar-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid var(--white);
+      overflow: hidden;
+      background: var(--ivory);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 2rem;
+      color: var(--charcoal);
+    }
+
+    .pf-avatar-inner img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover
+    }
+
+    .pf-cam-btn {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--charcoal);
+      border: 2.5px solid var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .2s;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .pf-cam-btn:hover {
+      transform: scale(1.12)
+    }
+
+    .pf-cam-btn svg {
+      fill: var(--white);
+      width: 13px;
+      height: 13px
+    }
+
+    #fileInput {
+      display: none
+    }
+
+    .pf-name {
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -.3px
+    }
+
+    .pf-bio {
+      font-size: .82rem;
+      color: #555;
+      line-height: 1.6;
+      word-break: break-word;
+      max-width: 260px;
+    }
+
+    .pf-bio-placeholder {
+      color: var(--muted);
+      font-style: italic
+    }
+
+    /* stats */
+    .pf-stats {
+      display: flex;
+      width: 100%;
+      background: var(--ivory);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      overflow: hidden;
+    }
+
+    .pf-stat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 6px;
+    }
+
+    .pf-stat+.pf-stat {
+      border-left: 1px solid var(--glass-border)
+    }
+
+    .pf-stat-num {
+      font-weight: 800;
+      font-size: 1.1rem;
+      line-height: 1.2;
+      color: var(--charcoal)
+    }
+
+    .pf-stat-lbl {
+      font-size: .62rem;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-top: 2px
+    }
+
+    button.pf-stat {
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: background .2s;
+    }
+
+    button.pf-stat * {
+      cursor: pointer;
+      user-select: none
+    }
+
+    button.pf-stat:hover {
+      background: var(--sand)
+    }
+
+    button.pf-stat:active {
+      background: var(--glass-border)
+    }
+
+    /* buttons */
+    .pf-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%
+    }
+
+    .pf-btn {
+      flex: 1;
+      padding: 11px 6px;
+      border-radius: var(--item-radius);
+      font-weight: 700;
+      font-size: .82rem;
+      cursor: pointer;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all .2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .pf-btn.primary {
+      background: var(--charcoal);
+      color: var(--white);
+      box-shadow: var(--shadow-md)
+    }
+
+    .pf-btn.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg)
+    }
+
+    .pf-btn.secondary {
+      background: var(--ivory);
+      color: var(--charcoal);
+      border: 1.5px solid var(--glass-border)
+    }
+
+    .pf-btn.secondary:hover {
+      background: var(--sand)
+    }
+
+    .pf-btn svg {
+      width: 15px;
+      height: 15px;
+      fill: currentColor
+    }
+
+    /* info card */
+    .pf-info-card {
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--item-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .pf-info-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .82rem;
+      color: var(--muted)
+    }
+
+    .pf-info-row span {
+      color: var(--charcoal);
+      font-weight: 600
+    }
+
+    /* edit card */
+    .pf-edit-card {
+      display: none;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--item-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-sm);
+      padding: 18px;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .pf-edit-card.open {
+      display: flex
+    }
+
+    .pf-edit-label {
+      font-size: .65rem;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .7px
+    }
+
+    .pf-input {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1.5px solid var(--glass-border);
+      background: var(--white);
+      font-size: .85rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--charcoal);
+      outline: none;
+      transition: all .2s;
+    }
+
+    .pf-input:focus {
+      border-color: var(--charcoal);
+      box-shadow: 0 0 0 3px rgba(26, 28, 35, .08)
+    }
+
+    textarea.pf-input {
+      min-height: 72px;
+      resize: none;
+      line-height: 1.5
+    }
+
+    .pf-char {
+      text-align: right;
+      font-size: .62rem;
+      color: var(--muted)
+    }
+
+    .pf-save-btn {
+      padding: 11px;
+      border-radius: 14px;
+      border: none;
+      background: var(--charcoal);
+      color: var(--white);
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s;
+      box-shadow: var(--shadow-md);
+    }
+
+    .pf-save-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg)
+    }
+
+    .pf-save-msg {
+      text-align: center;
+      font-size: .75rem;
+      font-weight: 700;
+      min-height: 16px
+    }
+
+    /* =============================================
+       RIGHT PANEL — grid
+    ============================================= */
+    .pf-right {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--glass);
+      backdrop-filter: blur(var(--blur));
+      border-radius: var(--card-radius);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow-premium);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .pf-grid-bar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .pf-grid-bar svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--charcoal)
+    }
+
+    .pf-grid-bar-title {
+      font-weight: 800;
+      font-size: .95rem;
+      letter-spacing: -.2px
+    }
+
+    .pf-grid-badge {
+      margin-left: auto;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--ivory);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .pf-tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px 22px;
+      cursor: pointer;
+      transition: all .2s;
+      border-bottom: 3px solid transparent;
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--muted);
+      background: transparent;
+      border-top: none;
+      border-left: none;
+      border-right: none;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .pf-tab:first-child {
+      border-right: 1px solid var(--glass-border)
+    }
+
+    .pf-tab.active {
+      color: var(--charcoal);
+      border-bottom-color: var(--charcoal)
+    }
+
+    .pf-tab:hover:not(.active) {
+      color: var(--charcoal);
+      background: var(--ivory)
+    }
+
+    .pf-tab svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor
+    }
+
+    .pf-grid {
+      flex: 1;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      padding: 3px;
+      align-content: start;
+    }
+
+    .pf-grid-item {
+      aspect-ratio: 1;
+      background: var(--ivory);
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+
+    .pf-grid-item video,
+    .pf-grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block
+    }
+
+    .pf-grid-overlay {
+      position: absolute;
+      inset: 0;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      transition: background .2s;
+    }
+
+    .pf-grid-item:hover .pf-grid-overlay {
+      background: rgba(26, 28, 35, .35)
+    }
+
+    .pf-grid-play {
+      opacity: 0;
+      transition: opacity .2s
+    }
+
+    .pf-grid-item:hover .pf-grid-play {
+      opacity: 1
+    }
+
+    .pf-grid-play svg {
+      width: 30px;
+      height: 30px;
+      fill: var(--white);
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .5))
+    }
+
+    .pf-del-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, .55);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .2s;
+      z-index: 5;
+    }
+
+    .pf-grid-item:hover .pf-del-btn {
+      opacity: 1
+    }
+
+    .pf-del-btn:hover {
+      background: rgba(255, 59, 48, .85)
+    }
+
+    .pf-del-btn svg {
+      width: 14px;
+      height: 14px;
+      fill: var(--white)
+    }
+
+    .pf-grid-empty {
+      grid-column: 1/-1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      gap: 12px;
+      color: var(--muted);
+    }
+
+    .pf-grid-empty svg {
+      width: 52px;
+      height: 52px;
+      fill: var(--muted);
+      opacity: .45
+    }
+
+    .pf-grid-empty p {
+      font-size: .88rem;
+      font-weight: 600
+    }
+
+    /* =============================================
+       TOAST
+    ============================================= */
+    .pf-toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--charcoal);
+      color: var(--white);
+      padding: 10px 22px;
+      border-radius: 24px;
+      font-size: .82rem;
+      font-weight: 700;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      transition: transform .3s cubic-bezier(.175, .885, .32, 1.275);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .pf-toast.show {
+      transform: translateX(-50%) translateY(0)
+    }
+
+    /* =============================================
+       CAPTION MODAL
+    ============================================= */
+    .cap-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9000;
+      background: rgba(0, 0, 0, .45);
+      backdrop-filter: blur(8px);
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .cap-backdrop.open {
+      display: flex
+    }
+
+    .cap-sheet {
+      background: var(--white);
+      border-radius: 28px 28px 0 0;
+      padding: 24px 22px 40px;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .cap-sheet h3 {
+      font-weight: 800;
+      font-size: 1rem;
+      color: var(--charcoal)
+    }
+
+    .cap-sheet textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1.5px solid var(--glass-border);
+      font-size: .85rem;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      resize: none;
+      outline: none;
+      background: var(--ivory);
+      color: var(--charcoal);
+    }
+
+    .cap-sheet textarea:focus {
+      border-color: var(--charcoal)
+    }
+
+    .cap-btns {
+      display: flex;
+      gap: 10px
+    }
+
+    .cap-btns button {
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      border: none;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      transition: all .2s;
+    }
+
+    .cap-ok {
+      background: var(--charcoal);
+      color: var(--white);
+      box-shadow: var(--shadow-md)
+    }
+
+    .cap-ok:hover {
+      transform: translateY(-1px)
+    }
+
+    .cap-cancel {
+      background: var(--ivory);
+      color: var(--charcoal);
+      border: 1px solid var(--glass-border)
+    }
+
+    .cap-cancel:hover {
+      background: var(--sand)
+    }
+
+    /* =============================================
+       MOBILE  (<=980px)
+    ============================================= */
+    @media(max-width:980px) {
+
+      html,
+      body {
+        overflow: auto;
+        height: auto
+      }
+
+      .pf-body {
+        flex-direction: column;
+        overflow: visible;
+        padding: 12px 12px 88px;
+        gap: 12px;
+        flex: none;
+      }
+
+      .pf-left {
+        width: 100%;
+        overflow: visible;
+        flex-shrink: 0
+      }
+
+      .pf-right {
+        overflow: visible;
+        border-radius: 28px
+      }
+
+      .pf-grid {
+        overflow: visible;
+        max-height: none
+      }
+
+      .pf-card {
+        border-radius: 28px;
+        padding: 22px 18px 18px
+      }
+
+      .pf-nav {
+        height: 56px;
+        padding: 0 14px
+      }
+
+      .pf-nav-back,
+      .pf-nav-menu {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px
+      }
+
+      .pf-avatar-ring {
+        width: 88px;
+        height: 88px
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP NAV -->
+  <nav class="pf-nav">
+    <a href="{{ url_for('chat') }}" class="pf-nav-back" title="Back">&#8592;</a>
+    <span class="pf-nav-title" id="navUsername">{{ username }}</span>
+    <div class="pf-nav-menu-wrap">
+      <button class="pf-nav-menu" id="menuBtn" onclick="toggleMenu()">&#8943;</button>
+      <div class="pf-dropdown" id="menuDropdown">
+        <button onclick="toggleEdit()">Edit Profile</button>
+        <hr>
+        <a href="/remove_profile_pic">Remove Photo</a>
+        <hr>
+        <a href="/logout" class="danger">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- BODY -->
+  <div class="pf-body">
+
+    <!-- LEFT: profile info -->
+    <div class="pf-left">
+
+      <!-- Profile card -->
+      <div class="pf-card">
+        <div class="pf-avatar-wrap">
+          <form action="/update_profile" method="POST" enctype="multipart/form-data" id="photoForm">
+            <label for="fileInput" style="cursor:pointer">
+              <div class="pf-avatar-ring">
+                <div class="pf-avatar-inner">
+                  <img id="previewImg"
+                    src="{{ url_for('static', filename='uploads/' + profile_pic) if profile_pic else url_for('static', filename='Images/profile.png') }}">
+                </div>
+              </div>
+            </label>
+            <label for="fileInput" class="pf-cam-btn" title="Change photo">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M3 4V1h2v3h3v2H5v3H3V6H0V4h3zm3 6V7h3V4h7l1.83 2H21c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2V10h3zm7 9c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-3.2-5c0 1.77 1.43 3.2 3.2 3.2s3.2-1.43 3.2-3.2-1.43-3.2-3.2-3.2-3.2 1.43-3.2 3.2z" />
+              </svg>
+            </label>
+            <input type="file" name="profile_pic" id="fileInput" accept="image/*">
+          </form>
+        </div>
+
+        <div class="pf-name" id="displayName">{{ username }}</div>
+        <div class="pf-bio" id="displayBio">
+          {% if bio %}{{ bio }}{% else %}<span class="pf-bio-placeholder">No bio yet</span>{% endif %}
+        </div>
+
+        <!-- Stats row -->
+        <div class="pf-stats">
+          <div class="pf-stat">
+            <div class="pf-stat-num" id="reelCountEl">{{ reel_count }}</div>
+            <div class="pf-stat-lbl">Reels</div>
+          </div>
+          <div class="pf-stat">
+            <div class="pf-stat-num" id="postCountEl">{{ post_count }}</div>
+            <div class="pf-stat-lbl">Posts</div>
+          </div>
+          <button class="pf-stat" onclick="openFollowModal('followers')">
+            <div class="pf-stat-num" id="followerCountEl">{{ follower_count }}</div>
+            <div class="pf-stat-lbl">Followers</div>
+          </button>
+          <button class="pf-stat" onclick="openFollowModal('following')">
+            <div class="pf-stat-num" id="followingCountEl">{{ following_count }}</div>
+            <div class="pf-stat-lbl">Following</div>
+          </button>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="pf-actions">
+          <button class="pf-btn primary" onclick="openUpload('reel')">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+            </svg>
+            Add Reel
+          </button>
+          <button class="pf-btn secondary" onclick="openUpload('post')">
+            <svg viewBox="0 0 24 24">
+              <path
+                d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+            </svg>
+            Add Post
+          </button>
+        </div>
+      </div><!-- /pf-card -->
+
+      <!-- Info card -->
+      <div class="pf-info-card">
+        <div class="pf-info-row">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="var(--muted)">
+            <path
+              d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+          </svg>
+          <span>{{ email }}</span>
+        </div>
+        <div class="pf-info-row">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="var(--muted)">
+            <path
+              d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+          </svg>
+          <span>{{ phone }}</span>
+        </div>
+      </div>
+
+      <!-- Edit profile (hidden until opened) -->
+      <div class="pf-edit-card" id="editPanel">
+        <div class="pf-edit-label">Edit Profile</div>
+        <div class="pf-edit-label">Username</div>
+        <input class="pf-input" id="editUsername" value="{{ username }}" maxlength="50" placeholder="Username">
+        <div class="pf-edit-label">Bio</div>
+        <textarea class="pf-input" id="editBio" maxlength="200"
+          placeholder="Tell the world about yourself...">{{ bio }}</textarea>
+        <div class="pf-char"><span id="bioCount">{{ bio|length }}</span>/200</div>
+        <button class="pf-save-btn" onclick="saveProfileInfo()">Save Changes</button>
+        <div class="pf-save-msg" id="saveMsg"></div>
+      </div>
+
+    </div><!-- /pf-left -->
+
+    <!-- RIGHT: grid -->
+    <div class="pf-right">
+      <div class="pf-grid-bar">
+        <button class="pf-tab active" id="tabReels" onclick="switchTab('reels')">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+          </svg>
+          Reels
+          <span class="pf-grid-badge" id="gridReelCount">{{ reel_count }}</span>
+        </button>
+        <button class="pf-tab" id="tabPosts" onclick="switchTab('posts')">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+          </svg>
+          Posts
+          <span class="pf-grid-badge" id="gridPostCount">{{ post_count }}</span>
+        </button>
+      </div>
+      <div class="pf-grid" id="pfGrid">
+        <div class="pf-grid-empty">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+          </svg>
+          <p>No reels yet &mdash; add one!</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pf-body -->
+
+  <!-- TOAST -->
+  <div class="pf-toast" id="pfToast"></div>
+
+  <!-- CAPTION / UPLOAD MODAL -->
+  <div class="cap-backdrop" id="capModal">
+    <div class="cap-sheet">
+      <h3 id="capTitle">Add Reel</h3>
+      <textarea id="capText" placeholder="Write a caption..." maxlength="200"></textarea>
+      <input type="file" id="capFileInput" style="display:none">
+      <div class="cap-btns">
+        <button class="cap-cancel" onclick="closeUpload()">Cancel</button>
+        <button class="cap-ok" id="capOkBtn" onclick="submitUpload()">Choose &amp; Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MY_ID = parseInt("{{ user_id }}", 10);
+    let _uploadType = 'reel';
+    let _uploadFile = null;
+    let _activeTab = 'reels';
+
+    /* --- Menu --- */
+    function toggleMenu() {
+      document.getElementById('menuDropdown').classList.toggle('open');
+    }
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.pf-nav-menu-wrap'))
+        document.getElementById('menuDropdown').classList.remove('open');
+    });
+
+    /* --- Edit panel toggle --- */
+    function toggleEdit() {
+      const p = document.getElementById('editPanel');
+      p.classList.toggle('open');
+      document.getElementById('menuDropdown').classList.remove('open');
+      if (p.classList.contains('open'))
+        setTimeout(() => p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+
+    /* --- Bio counter --- */
+    document.getElementById('editBio').addEventListener('input', function () {
+      document.getElementById('bioCount').textContent = this.value.length;
+    });
+
+    /* --- Photo change --- */
+    document.getElementById('fileInput').onchange = function () {
+      if (!this.files[0]) return;
+      document.getElementById('previewImg').src = URL.createObjectURL(this.files[0]);
+      showToast('Uploading photo...');
+      document.getElementById('photoForm').submit();
+    };
+
+    /* --- Save profile info --- */
+    async function saveProfileInfo() {
+      const username = document.getElementById('editUsername').value.trim();
+      const bio = document.getElementById('editBio').value.trim();
+      const msg = document.getElementById('saveMsg');
+      if (!username) { msg.style.color = '#FF3B30'; msg.textContent = 'Username required'; return; }
+      try {
+        const res = await fetch('/update_profile_info', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, bio })
+        });
+        const d = await res.json();
+        if (d.success) {
+          msg.style.color = '#34C759'; msg.textContent = 'Saved!';
+          document.getElementById('displayName').textContent = username;
+          document.getElementById('navUsername').textContent = username;
+          const b = document.getElementById('displayBio');
+          b.innerHTML = bio || '<span class="pf-bio-placeholder">No bio yet</span>';
+        } else { msg.style.color = '#FF3B30'; msg.textContent = d.error || 'Failed'; }
+      } catch (e) { msg.style.color = '#FF3B30'; msg.textContent = 'Network error'; }
+      setTimeout(() => { document.getElementById('saveMsg').textContent = ''; }, 3000);
+    }
+
+    /* --- Tab switching --- */
+    function switchTab(tab) {
+      _activeTab = tab;
+      document.getElementById('tabReels').classList.toggle('active', tab === 'reels');
+      document.getElementById('tabPosts').classList.toggle('active', tab === 'posts');
+      if (tab === 'reels') loadMyReels();
+      else loadMyPosts();
+    }
+
+    /* --- Upload modal --- */
+    function openUpload(type) {
+      _uploadType = type;
+      _uploadFile = null;
+      document.getElementById('capText').value = '';
+      document.getElementById('capTitle').textContent = type === 'reel' ? 'Add Reel' : 'Add Post';
+      document.getElementById('capOkBtn').textContent = 'Choose & Upload';
+      document.getElementById('capModal').classList.add('open');
+      const fi = document.getElementById('capFileInput');
+      fi.accept = type === 'reel' ? 'video/*' : 'image/*,video/*';
+      fi.value = '';
+      fi.click();
+    }
+    function closeUpload() {
+      document.getElementById('capModal').classList.remove('open');
+      _uploadFile = null;
+    }
+    document.getElementById('capModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('capModal')) closeUpload();
+    });
+    document.getElementById('capFileInput').addEventListener('change', function () {
+      if (this.files[0]) {
+        _uploadFile = this.files[0];
+        document.getElementById('capOkBtn').textContent = 'Upload';
+      }
+    });
+    async function submitUpload() {
+      if (!_uploadFile) { document.getElementById('capFileInput').click(); return; }
+      const caption = document.getElementById('capText').value.trim();
+      const fd = new FormData();
+      let endpoint;
+      if (_uploadType === 'reel') {
+        endpoint = '/upload_reel';
+        fd.append('video', _uploadFile);
+      } else {
+        endpoint = '/upload_post';
+        fd.append('media', _uploadFile);
+      }
+      fd.append('caption', caption);
+      showToast('Uploading...');
+      closeUpload();
+      try {
+        const res = await fetch(endpoint, { method: 'POST', body: fd });
+        const d = await res.json();
+        if (d.success) {
+          showToast('Uploaded!');
+          if (_uploadType === 'reel') { switchTab('reels'); }
+          else { switchTab('posts'); }
+        }
+        else showToast(d.error || 'Upload failed');
+      } catch (e) { showToast('Upload failed'); }
+    }
+
+    /* --- Toast --- */
+    function showToast(msg) {
+      const t = document.getElementById('pfToast');
+      t.textContent = msg; t.classList.add('show');
+      clearTimeout(t._t);
+      t._t = setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    /* --- Delete helpers --- */
+    function delBtnHtml() {
+      return '<button class="pf-del-btn" onclick="event.stopPropagation()"><svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button>';
+    }
+
+    async function deleteItem(type, id, el) {
+      if (!confirm('Delete this ' + type + '?')) return;
+      try {
+        const url = type === 'reel' ? '/api/reel/' + id : '/api/post/' + id;
+        const res = await fetch(url, { method: 'DELETE' });
+        const d = await res.json();
+        if (d.success) {
+          el.remove();
+          showToast(type.charAt(0).toUpperCase() + type.slice(1) + ' deleted');
+          if (type === 'reel') {
+            const grid = document.getElementById('pfGrid');
+            const count = grid.querySelectorAll('.pf-grid-item').length;
+            document.getElementById('reelCountEl').textContent = count;
+            document.getElementById('gridReelCount').textContent = count;
+            if (!count) showEmptyState('reels');
+          } else {
+            const grid = document.getElementById('pfGrid');
+            const count = grid.querySelectorAll('.pf-grid-item').length;
+            document.getElementById('postCountEl').textContent = count;
+            document.getElementById('gridPostCount').textContent = count;
+            if (!count) showEmptyState('posts');
+          }
+        } else showToast(d.error || 'Delete failed');
+      } catch (e) { showToast('Delete failed'); }
+    }
+
+    function showEmptyState(type) {
+      const grid = document.getElementById('pfGrid');
+      if (type === 'reels') {
+        grid.innerHTML = '<div class="pf-grid-empty">'
+          + '<svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>'
+          + '<p>No reels yet &mdash; add one!</p></div>';
+      } else {
+        grid.innerHTML = '<div class="pf-grid-empty">'
+          + '<svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>'
+          + '<p>No posts yet &mdash; add one!</p></div>';
+      }
+    }
+
+    /* --- Load reels grid --- */
+    async function loadMyReels() {
+      try {
+        const res = await fetch('/api/reels');
+        const all = await res.json();
+        const mine = all.filter(r => r.user_id === MY_ID);
+        const grid = document.getElementById('pfGrid');
+        document.getElementById('reelCountEl').textContent = mine.length;
+        document.getElementById('gridReelCount').textContent = mine.length;
+        if (!mine.length) {
+          showEmptyState('reels');
+          return;
+        }
+        grid.innerHTML = '';
+        mine.forEach(r => {
+          const el = document.createElement('div');
+          el.className = 'pf-grid-item';
+          el.innerHTML = '<video src="' + r.video_url + '" preload="metadata" muted playsinline></video>'
+            + delBtnHtml()
+            + '<div class="pf-grid-overlay"><div class="pf-grid-play">'
+            + '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+            + '</div></div>';
+          el.querySelector('.pf-del-btn').onclick = function (e) { e.stopPropagation(); deleteItem('reel', r.id, el); };
+          grid.appendChild(el);
+        });
+      } catch (e) { }
+    }
+
+    /* --- Load posts grid --- */
+    async function loadMyPosts() {
+      try {
+        const res = await fetch('/api/my_posts');
+        const posts = await res.json();
+        const grid = document.getElementById('pfGrid');
+        document.getElementById('postCountEl').textContent = posts.length;
+        document.getElementById('gridPostCount').textContent = posts.length;
+        if (!posts.length) {
+          showEmptyState('posts');
+          return;
+        }
+        grid.innerHTML = '';
+        posts.forEach(p => {
+          const el = document.createElement('div');
+          el.className = 'pf-grid-item';
+          if (p.media_type === 'video') {
+            el.innerHTML = '<video src="' + p.media_url + '" preload="metadata" muted playsinline></video>'
+              + delBtnHtml()
+              + '<div class="pf-grid-overlay"><div class="pf-grid-play">'
+              + '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+              + '</div></div>';
+          } else {
+            el.innerHTML = '<img src="' + p.media_url + '" alt="">'
+              + delBtnHtml()
+              + '<div class="pf-grid-overlay"></div>';
+          }
+          el.querySelector('.pf-del-btn').onclick = function (e) { e.stopPropagation(); deleteItem('post', p.id, el); };
+          grid.appendChild(el);
+        });
+      } catch (e) { }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMyReels);
+  </script>
+
+  <!-- ====== FOLLOWERS / FOLLOWING MODAL ====== -->
+  <style>
+    .fl-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9500;
+      background: rgba(0, 0, 0, .5);
+      backdrop-filter: blur(8px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .fl-backdrop.open {
+      display: flex
+    }
+
+    .fl-modal {
+      background: var(--white);
+      border-radius: 22px;
+      width: 92%;
+      max-width: 420px;
+      max-height: 75vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+
+    .fl-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .fl-header h3 {
+      font-weight: 800;
+      font-size: .95rem;
+      color: var(--charcoal);
+      margin: 0
+    }
+
+    .fl-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--ivory);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .2s;
+    }
+
+    .fl-close:hover {
+      background: var(--sand)
+    }
+
+    .fl-close svg {
+      width: 16px;
+      height: 16px;
+      fill: var(--charcoal)
+    }
+
+    .fl-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--glass-border);
+    }
+
+    .fl-tab {
+      flex: 1;
+      padding: 11px 0;
+      text-align: center;
+      font-weight: 700;
+      font-size: .8rem;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2.5px solid transparent;
+      transition: all .2s;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .fl-tab.active {
+      color: var(--charcoal);
+      border-bottom-color: var(--charcoal)
+    }
+
+    .fl-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .fl-list::-webkit-scrollbar {
+      width: 4px
+    }
+
+    .fl-list::-webkit-scrollbar-thumb {
+      background: var(--sand);
+      border-radius: 4px
+    }
+
+    .fl-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+
+    .fl-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      transition: background .15s;
+    }
+
+    .fl-item:hover {
+      background: var(--ivory)
+    }
+
+    .fl-item img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--glass-border);
+      flex-shrink: 0;
+    }
+
+    .fl-item-info {
+      flex: 1;
+      min-width: 0
+    }
+
+    .fl-item-name {
+      font-weight: 700;
+      font-size: .85rem;
+      color: var(--charcoal);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .fl-item-btn {
+      padding: 7px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: .75rem;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      flex-shrink: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .fl-btn-unfollow {
+      background: var(--ivory);
+      color: var(--charcoal);
+      border: 1.5px solid var(--glass-border)
+    }
+
+    .fl-btn-unfollow:hover {
+      background: var(--sand)
+    }
+
+    .fl-btn-follow {
+      background: var(--charcoal);
+      color: var(--white)
+    }
+
+    .fl-btn-follow:hover {
+      opacity: .85
+    }
+
+    .fl-btn-followback {
+      background: var(--charcoal);
+      color: var(--white);
+      border: none
+    }
+
+    .fl-btn-followback:hover {
+      opacity: .85
+    }
+
+    .fl-btn-following {
+      background: var(--ivory);
+      color: var(--muted);
+      border: 1.5px solid var(--glass-border);
+      cursor: default
+    }
+
+    .fl-btn-remove {
+      background: var(--ivory);
+      color: #c0392b;
+      border: 1.5px solid rgba(192, 57, 43, .2)
+    }
+
+    .fl-btn-remove:hover {
+      background: rgba(192, 57, 43, .08)
+    }
+
+    .fl-item-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-shrink: 0
+    }
+  </style>
+
+  <div class="fl-backdrop" id="flBackdrop" onclick="if(event.target===this)closeFollowModal()">
+    <div class="fl-modal">
+      <div class="fl-header">
+        <h3 id="flTitle">Followers</h3>
+        <button class="fl-close" onclick="closeFollowModal()">
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+          </svg>
+        </button>
+      </div>
+      <div class="fl-tabs">
+        <button class="fl-tab active" id="flTabFollowers" onclick="switchFollowTab('followers')">Followers</button>
+        <button class="fl-tab" id="flTabFollowing" onclick="switchFollowTab('following')">Following</button>
+      </div>
+      <div class="fl-list" id="flList"></div>
+    </div>
+  </div>
+
+  <script>
+    let currentFollowTab = 'followers';
+
+    function openFollowModal(tab) {
+      currentFollowTab = tab;
+      document.getElementById('flBackdrop').classList.add('open');
+      switchFollowTab(tab);
+    }
+    function closeFollowModal() {
+      document.getElementById('flBackdrop').classList.remove('open');
+    }
+
+    function switchFollowTab(tab) {
+      currentFollowTab = tab;
+      document.getElementById('flTabFollowers').classList.toggle('active', tab === 'followers');
+      document.getElementById('flTabFollowing').classList.toggle('active', tab === 'following');
+      document.getElementById('flTitle').textContent = tab === 'followers' ? 'Followers' : 'Following';
+      loadFollowList(tab);
+    }
+
+    async function loadFollowList(tab) {
+      const list = document.getElementById('flList');
+      list.innerHTML = '<div class="fl-empty">Loading...</div>';
+      try {
+        const url = tab === 'followers' ? '/api/my_followers' : '/api/my_following';
+        const res = await fetch(url);
+        const users = await res.json();
+        if (!users.length) {
+          list.innerHTML = '<div class="fl-empty">No ' + tab + ' yet</div>';
+          return;
+        }
+        list.innerHTML = '';
+        users.forEach(u => {
+          const div = document.createElement('div');
+          div.className = 'fl-item';
+          const pic = u.profile_pic ? '/static/uploads/' + u.profile_pic : '/static/Images/profile.png';
+          if (tab === 'followers') {
+            const fbBtn = u.i_follow_them
+              ? '<button class="fl-item-btn fl-btn-following" disabled>Following ✓</button>'
+              : '<button class="fl-item-btn fl-btn-followback" onclick="followBack(' + u.id + ', this)">Follow Back</button>';
+            div.innerHTML = '<img src="' + pic + '" alt="" style="cursor:pointer" onclick="location.href=\'/user_profile/' + u.id + '\'">' +
+              '<div class="fl-item-info"><div class="fl-item-name" style="cursor:pointer" onclick="location.href=\'/user_profile/' + u.id + '\'">' + u.username + '</div></div>' +
+              '<div class="fl-item-actions">' + fbBtn + '<button class="fl-item-btn fl-btn-remove" onclick="removeFollower(' + u.id + ', this)">Remove</button></div>';
+          } else {
+            div.innerHTML = '<img src="' + pic + '" alt="" style="cursor:pointer" onclick="location.href=\'/user_profile/' + u.id + '\'">' +
+              '<div class="fl-item-info"><div class="fl-item-name" style="cursor:pointer" onclick="location.href=\'/user_profile/' + u.id + '\'">' + u.username + '</div></div>' +
+              '<button class="fl-item-btn fl-btn-remove" onclick="unfollowFromList(' + u.id + ', this)">Remove</button>';
+          }
+          list.appendChild(div);
+        });
+      } catch (e) {
+        list.innerHTML = '<div class="fl-empty">Failed to load</div>';
+      }
+    }
+
+    async function removeFollower(userId, btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch('/api/remove_follower', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          btn.closest('.fl-item').remove();
+          document.getElementById('followerCountEl').textContent = data.follower_count;
+          const remaining = document.querySelectorAll('#flList .fl-item').length;
+          if (!remaining) document.getElementById('flList').innerHTML = '<div class="fl-empty">No followers yet</div>';
+        }
+      } catch (e) {
+        btn.textContent = 'Remove';
+        btn.disabled = false;
+      }
+    }
+
+    async function followBack(userId, btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch('/api/follow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          btn.textContent = 'Following ✓';
+          btn.className = 'fl-item-btn fl-btn-following';
+          btn.disabled = true;
+        } else {
+          btn.textContent = 'Follow Back';
+          btn.disabled = false;
+        }
+      } catch (e) {
+        btn.textContent = 'Follow Back';
+        btn.disabled = false;
+      }
+    }
+
+    async function unfollowFromList(userId, btn) {
+      btn.disabled = true;
+      btn.textContent = '...';
+      try {
+        const res = await fetch('/api/unfollow', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          btn.closest('.fl-item').remove();
+          const cnt = document.querySelectorAll('#flList .fl-item').length;
+          document.getElementById('followingCountEl').textContent = cnt;
+          if (!cnt) document.getElementById('flList').innerHTML = '<div class="fl-empty">No following yet</div>';
+        }
+      } catch (e) {
+        btn.textContent = 'Unfollow';
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,205 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orders â€” Shopy Retailer</title>
+  <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <meta name="user-role" content="retailer">
+  <style>
+    :root{--charcoal:#1A1C23;--muted:#8E9BAE;--sand:#F8F7F4;--ivory:#F8F7F4;--accent:#1A1C23;--success:#1A1C23;--danger:#1A1C23;--retailer:#1A1C23;--bg:#F8F7F4;}
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Plus Jakarta Sans',sans-serif;}
+    html{scroll-behavior:smooth;}
+    body{display:flex;min-height:100vh;background:var(--bg);color:var(--charcoal);overflow-x:hidden;}
+
+    @keyframes fadeUp{from{transform:translateY(12px);}to{transform:translateY(0);}}
+
+    .sidebar{width:240px;background:var(--charcoal);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
+    .brand-name{font-size:20px;font-weight:800;color:#fff;letter-spacing:0.5px;}
+    .brand-sub{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(26,28,35,0.10);margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;}
+    .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:14px;margin-bottom:4px;text-decoration:none;color:rgba(255,255,255,0.6);font-size:14px;font-weight:600;transition:background-color 0.25s ease,color 0.25s ease,transform 0.25s ease;}
+    .nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;transform:translateX(3px);}
+    .nav-item.active{background:rgba(255,255,255,0.10);color:#fff;}
+    .nav-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.2);flex-shrink:0;}
+    .nav-item.active .nav-dot{background:#fff;}
+    .sidebar-footer{padding:16px;border-top:1px solid rgba(255,255,255,0.08);}
+    .user-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .user-avatar{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;}
+    .user-name{font-size:13px;font-weight:700;color:#fff;}
+    .logout-btn{display:flex;align-items:center;padding:10px 14px;border-radius:12px;text-decoration:none;color:rgba(255,255,255,0.45);font-size:13px;font-weight:600;transition:0.2s;}
+    .logout-btn:hover{background:#fff;color:var(--charcoal);}
+
+    .main{margin-left:240px;flex:1;padding:32px;}
+    .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;flex-wrap:wrap;gap:16px;animation:fadeUp 0.45s ease 0.08s both;}
+    .page-title{font-size:26px;font-weight:800;}
+    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;}
+    .filter-btn{padding:8px 18px;border-radius:20px;border:1.5px solid #EAEBE6;background:#fff;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);text-decoration:none;transition:0.2s;}
+    .filter-btn:hover{border-color:var(--charcoal);color:var(--charcoal);}
+    .filter-btn.active{background:var(--charcoal);border-color:var(--charcoal);color:#fff;}
+
+    .orders-list{display:flex;flex-direction:column;gap:16px;}
+    .order-card{background:#fff;border-radius:20px;padding:22px;border:1px solid rgba(248,247,244,0.4);transition:transform 0.2s ease,box-shadow 0.2s ease;transform:translateY(12px);animation:fadeUp 0.42s cubic-bezier(0.22,1,0.36,1) forwards;}
+    .order-card:hover{box-shadow:0 8px 24px rgba(0,0,0,0.07);}
+    .orders-list .order-card:nth-child(1){animation-delay:0.12s;}
+    .orders-list .order-card:nth-child(2){animation-delay:0.18s;}
+    .orders-list .order-card:nth-child(3){animation-delay:0.24s;}
+    .orders-list .order-card:nth-child(4){animation-delay:0.30s;}
+    .orders-list .order-card:nth-child(5){animation-delay:0.36s;}
+    .orders-list .order-card:nth-child(6){animation-delay:0.42s;}
+    .order-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+    .order-id{font-size:15px;font-weight:800;}
+    .order-date{font-size:12px;color:var(--muted);margin-top:2px;}
+    .order-total{font-size:18px;font-weight:800;}
+    .status-badge{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;}
+    .status-pending{background:rgba(26,28,35,0.12);color:var(--retailer);}
+    .status-processing{background:rgba(26,28,35,0.1);color:var(--accent);}
+    .status-shipped{background:rgba(26,28,35,0.10);color:#1A1C23;}
+    .status-delivered{background:rgba(26,28,35,0.10);color:var(--success);}
+    .status-cancelled{background:rgba(26,28,35,0.10);color:var(--danger);}
+    .order-body{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+    .info-block{font-size:13px;}
+    .info-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--muted);margin-bottom:4px;}
+    .info-value{font-weight:700;}
+    .items-text{font-size:13px;color:rgba(26,28,35,0.7);background:var(--ivory);border-radius:12px;padding:10px 14px;border:1px solid rgba(248,247,244,0.4);margin-bottom:14px;}
+    .order-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(248,247,244,0.3);padding-top:14px;gap:12px;}
+    .status-label{font-size:13px;font-weight:700;color:var(--muted);}
+    .status-select{padding:10px 14px;border-radius:12px;border:1.5px solid #EAEBE6;background:var(--ivory);font-size:13px;font-weight:700;color:var(--charcoal);outline:none;cursor:pointer;transition:0.2s;}
+    .status-select:focus{border-color:var(--sand);}
+    .update-btn{padding:10px 22px;border-radius:12px;background:var(--charcoal);color:#fff;border:none;cursor:pointer;font-weight:700;font-size:13px;transition:0.2s;white-space:nowrap;}
+    .update-btn:hover{background:var(--accent);}
+    .empty-state{text-align:center;padding:80px 24px;color:var(--muted);animation:fadeUp 0.45s ease 0.16s both;}
+    .empty-box{width:72px;height:72px;border-radius:20px;background:var(--ivory);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:13px;font-weight:800;color:var(--muted);border:1px solid rgba(248,247,244,0.5);}
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--charcoal);color:#fff;padding:14px 24px;border-radius:16px;font-size:14px;font-weight:600;z-index:9999;transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1);}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.success{background:var(--success);}
+    @media(max-width:768px){
+      .sidebar{width:60px;}
+      .brand-name,.brand-sub,.nav-item span,.user-name{display:none;}
+      .main{margin-left:60px;padding:16px 12px;}
+      .page-title{font-size:22px;}
+      .filter-bar{overflow-x:auto;flex-wrap:nowrap;white-space:nowrap;padding-bottom:4px;}
+      .filter-btn{flex:none;}
+      .order-body{grid-template-columns:1fr;}
+      .order-footer{flex-wrap:wrap;justify-content:flex-start;}
+      .status-select,.update-btn{width:100%;}
+      .toast{max-width:92vw;text-align:center;padding:12px 14px;}
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      *,*::before,*::after{animation:none !important;transition:none !important;}
+    }
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-name">Shopy</div>
+    <div class="brand-sub">Retailer Portal</div>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="/retailer/dashboard"><div class="nav-dot"></div><span>Dashboard</span></a>
+    <a class="nav-item" href="/retailer/products"><div class="nav-dot"></div><span>Products</span></a>
+    <a class="nav-item active" href="/retailer/orders"><div class="nav-dot"></div><span>Orders</span></a>
+    <a class="nav-item" href="/retailer/assistant"><div class="nav-dot"></div><span>Assistant</span></a>
+    <a class="nav-item" href="/profile"><div class="nav-dot"></div><span>Profile</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-avatar">{{ username[0].upper() if username else 'R' }}</div>
+      <div><div class="user-name">{{ username }}</div></div>
+    </div>
+    <a class="logout-btn" href="/logout">Logout</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="page-header">
+    <h1 class="page-title">Orders</h1>
+    <div class="filter-bar">
+      <a href="/retailer/orders" class="filter-btn {{ 'active' if not status_filter }}">All</a>
+      <a href="/retailer/orders?status=pending" class="filter-btn {{ 'active' if status_filter == 'pending' }}">Pending</a>
+      <a href="/retailer/orders?status=processing" class="filter-btn {{ 'active' if status_filter == 'processing' }}">Processing</a>
+      <a href="/retailer/orders?status=shipped" class="filter-btn {{ 'active' if status_filter == 'shipped' }}">Shipped</a>
+      <a href="/retailer/orders?status=delivered" class="filter-btn {{ 'active' if status_filter == 'delivered' }}">Delivered</a>
+    </div>
+  </div>
+
+  {% if orders %}
+  <div class="orders-list">
+    {% for order in orders %}
+    <div class="order-card" id="order-{{ order.id }}">
+      <div class="order-header">
+        <div>
+          <div class="order-id">Order #{{ order.id }}</div>
+          <div class="order-date">{{ order.created_at[:16] if order.created_at else '' }}</div>
+        </div>
+        <div style="text-align:right;">
+          <span class="status-badge status-{{ order.status }}">{{ order.status.title() }}</span>
+          <div class="order-total" style="margin-top:6px;">Rs {{ "%.0f"|format(order.retailer_total or order.total_amount) }}</div>
+        </div>
+      </div>
+
+      <div class="order-body">
+        <div class="info-block">
+          <div class="info-label">Customer</div>
+          <div class="info-value">{{ order.shipping_name or 'â€”' }}</div>
+        </div>
+        <div class="info-block">
+          <div class="info-label">Phone</div>
+          <div class="info-value">{{ order.shipping_phone or 'â€”' }}</div>
+        </div>
+        <div class="info-block" style="grid-column:1/-1">
+          <div class="info-label">Ship to</div>
+          <div class="info-value">{{ order.shipping_address or 'â€”' }}</div>
+        </div>
+      </div>
+
+      <div class="items-text">{{ order.items_summary or 'No items' }}</div>
+
+      <div class="order-footer">
+        <span class="status-label">Update Status:</span>
+        <select class="status-select" id="status-{{ order.id }}">
+          <option value="pending" {{ 'selected' if order.status == 'pending' }}>Pending</option>
+          <option value="processing" {{ 'selected' if order.status == 'processing' }}>Processing</option>
+          <option value="shipped" {{ 'selected' if order.status == 'shipped' }}>Shipped</option>
+          <option value="delivered" {{ 'selected' if order.status == 'delivered' }}>Delivered</option>
+          <option value="cancelled" {{ 'selected' if order.status == 'cancelled' }}>Cancelled</option>
+        </select>
+        <button class="update-btn" onclick="updateStatus(Number('{{ order.id }}'))">Update</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-box">Orders</div>
+    <h3 style="font-size:20px;font-weight:800;color:var(--charcoal);margin-bottom:8px;">No orders yet</h3>
+    <p>When customers place orders, they will appear here.</p>
+  </div>
+  {% endif %}
+</main>
+
+<div class="toast" id="toast"></div>
+<script>
+  function showToast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 2500);
+  }
+  async function updateStatus(orderId) {
+    const status = document.getElementById('status-' + orderId).value;
+    const res = await fetch(`/api/retailer/order/${orderId}/status`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+    const data = await res.json();
+    if (data.success) { showToast('Order status updated!', 'success'); setTimeout(() => location.reload(), 600); }
+    else showToast(data.error || 'Failed to update', '');
+  }
+</script>
+</body>
+</html>
+

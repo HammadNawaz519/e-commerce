@@ -1,0 +1,11 @@
+PHASE 1 DOMAIN JUSTIFICATION (CS-254)
+
+Selected Domain: E-Commerce
+
+E-commerce is a strong fit for this project because it naturally contains dynamic, interdependent data that changes continuously with user behavior. Product inventory changes when orders are placed, customer preferences evolve through cart and wishlist actions, order and shipment statuses change over time, and payment records introduce transactional state transitions. This domain therefore demonstrates why a normalized relational design is essential: users, products, categories, orders, order items, reviews, addresses, discounts, payments, and shipments each represent distinct entities with clear dependencies and foreign key relationships. The schema in shopy.sql supports analytical and operational questions that require joins across multiple tables, such as top-selling products by category, retailer revenue, delivery performance, payment outcomes, and customer purchase patterns. Because these answers must reflect live records instead of hardcoded output, e-commerce directly satisfies the manual requirement for dynamic query behavior while also providing sufficient structural complexity for 3NF modeling and referential integrity enforcement.
+
+Why this domain satisfies Phase 1 requirements:
+- It supports more than 7 related tables with meaningful attributes.
+- It includes many-to-many business events through junction/bridge tables (order_items, cart, wishlists).
+- It enables realistic overlapping sample data for multi-table joins.
+- It maps cleanly to real-world constraints and scalable application behavior.

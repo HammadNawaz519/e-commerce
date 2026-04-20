@@ -1,0 +1,321 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shopy â€” Verify OTP</title>
+
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='Images/chit_chat.png') }}">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --charcoal: #1A1C23;
+  --muted: #8E9BAE;
+  --sand: #E1D9BC;
+  --ivory: #F0F0DB;
+  --card-radius: 40px;
+  --shadow: 0 30px 60px rgba(0,0,0,0.12);
+}
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+  font-family:'Plus Jakarta Sans', sans-serif;
+}
+
+html,body{
+  height:100%;
+}
+
+.fullscreen-wrapper{
+  width:100vw;
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg, var(--ivory) 0%, #FFFFFF 50%, var(--sand) 100%);
+  overflow:hidden;
+  position:relative;
+  color:var(--charcoal);
+}
+
+/* Glow */
+.bg-glow{
+  position:absolute;
+  width:600px;
+  height:600px;
+  background:radial-gradient(circle, var(--sand) 0%, transparent 70%);
+  filter:blur(100px);
+  opacity:0.3;
+  z-index:1;
+  animation:floatGlow 8s ease-in-out infinite alternate;
+}
+
+@keyframes floatGlow{
+  0%{ transform:translate(-250px,150px); }
+  100%{ transform:translate(250px,-150px); }
+}
+
+/* Container */
+.container{
+  width:90%;
+  max-width:480px;
+  padding:50px 40px;
+  border-radius:var(--card-radius);
+  background:rgba(255,255,255,0.6);
+  backdrop-filter:blur(25px);
+  -webkit-backdrop-filter:blur(25px);
+  border:1px solid rgba(255,255,255,0.8);
+  box-shadow:var(--shadow);
+  z-index:10;
+  text-align:center;
+}
+
+/* Brand */
+.brand-section{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:30px;
+}
+
+.brand-section img{
+  width:38px;
+  height:38px;
+}
+
+.brand-section h3{
+  font-size:20px;
+  font-weight:800;
+  letter-spacing:1px;
+}
+
+/* Text */
+h2{
+  font-size:24px;
+  font-weight:800;
+  margin-bottom:10px;
+}
+
+p{
+  font-size:14px;
+  color:rgba(26,28,35,0.7);
+  margin-bottom:25px;
+}
+
+/* OTP */
+.otp-box{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin-bottom:25px;
+}
+
+.otp-input{
+  width:50px;
+  height:55px;
+  border-radius:16px;
+  border:1px solid #EAEBE6;
+  background:#F9FAFB;
+  font-size:20px;
+  text-align:center;
+  font-weight:700;
+  outline:none;
+  transition:0.2s;
+}
+
+.otp-input:focus{
+  border-color:var(--sand);
+  background:#fff;
+  box-shadow:0 0 0 2px rgba(225,217,188,0.4);
+}
+
+/* Button */
+.primary-btn{
+  width:100%;
+  padding:16px;
+  border-radius:18px;
+  background:var(--charcoal);
+  color:#fff;
+  border:none;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  margin-top:10px;
+  box-shadow:0 10px 20px rgba(0,0,0,0.1);
+  transition:0.2s;
+}
+
+.primary-btn:hover{
+  transform:scale(1.02);
+}
+
+.form-error{
+  background:rgba(220,53,69,0.1);
+  color:#c0392b;
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:12px;
+  font-weight:600;
+  margin-top:12px;
+}
+
+.resend{
+  margin-top:18px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+.resend a{
+  color:var(--charcoal);
+  text-decoration:none;
+  font-weight:700;
+}
+
+/* MOBILE */
+@media (max-width:850px){
+
+  .fullscreen-wrapper{
+    height:100vh;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
+
+  .container{
+    width:92%;
+    max-width:380px;
+    padding:35px 25px;
+    border-radius:28px;
+  }
+
+  .otp-input{
+    width:42px;
+    height:48px;
+    font-size:18px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="fullscreen-wrapper">
+<div class="bg-glow"></div>
+
+<div class="container">
+
+  <div class="brand-section">
+    <img src="{{ url_for('static', filename='Images/chit_chat.png') }}" alt="Logo">
+    <h3>Shopy</h3>
+  </div>
+
+  <h2>Verify OTP</h2>
+  <p>Enter the 6-digit code we sent to your email.</p>
+
+  {% if request.args.get('error') %}
+  <div class="form-error">{{ request.args.get('error') | e }}</div>
+  {% endif %}
+
+  <form method="POST" id="otpForm" autocomplete="off">
+
+    <div class="otp-box">
+      <input maxlength="1" class="otp-input" id="d1">
+      <input maxlength="1" class="otp-input" id="d2">
+      <input maxlength="1" class="otp-input" id="d3">
+      <input maxlength="1" class="otp-input" id="d4">
+      <input maxlength="1" class="otp-input" id="d5">
+      <input maxlength="1" class="otp-input" id="d6">
+    </div>
+
+    <input type="hidden" name="otp" id="otpHidden">
+
+    <button type="submit" class="primary-btn">VERIFY</button>
+
+    <div class="resend">
+      Didn't receive a code?
+      <a href="#" id="resendLink">Resend</a>
+      <span id="timer"></span>
+    </div>
+    <div id="resendMsg" style="margin-top:10px;font-size:12px;font-weight:700;color:#1A1C23;min-height:16px;"></div>
+
+  </form>
+
+</div>
+</div>
+
+<script>
+const inputs = Array.from(document.querySelectorAll('.otp-input'));
+const hidden = document.getElementById('otpHidden');
+const form = document.getElementById('otpForm');
+const resendLink = document.getElementById('resendLink');
+const timerEl = document.getElementById('timer');
+const resendMsg = document.getElementById('resendMsg');
+let countdown = 0;
+
+inputs.forEach((el,i)=>{
+  el.addEventListener('input',(e)=>{
+    const val = e.target.value.replace(/\D/g,'').slice(0,1);
+    e.target.value = val;
+    if(val && i < inputs.length -1) inputs[i+1].focus();
+  });
+});
+
+form.addEventListener('submit',(e)=>{
+  const code = inputs.map(i=>i.value||'').join('');
+  if(code.length !== 6){
+    e.preventDefault();
+    inputs[0].focus();
+    return;
+  }
+  hidden.value = code;
+});
+
+function startTimer(sec){
+  countdown = sec;
+  updateTimer();
+  const iv = setInterval(()=>{
+    countdown--;
+    updateTimer();
+    if(countdown <= 0) clearInterval(iv);
+  },1000);
+}
+
+function updateTimer(){
+  if(countdown > 0){
+    timerEl.textContent = ` (${countdown}s)`;
+    resendLink.style.pointerEvents='none';
+  } else {
+    timerEl.textContent = '';
+    resendLink.style.pointerEvents='auto';
+  }
+}
+
+resendLink.addEventListener('click',(e)=>{
+  e.preventDefault();
+  if(countdown > 0) return;
+
+  startTimer(45);
+  resendMsg.textContent = '';
+  fetch(location.pathname + '?resend=1', {method:'POST'})
+    .then(r => r.json())
+    .then(d => {
+      if(d.success){
+        resendMsg.textContent = d.message || 'Sent again. Type the new code.';
+      } else {
+        resendMsg.textContent = d.message || 'Could not resend right now.';
+      }
+    })
+    .catch(()=>{
+      resendMsg.textContent = 'Could not resend right now.';
+    });
+});
+
+inputs[0].focus();
+</script>
+
+</body>
+</html>
