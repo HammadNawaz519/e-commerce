@@ -1,0 +1,391 @@
+/*=============== GOOGLE FONTS ===============*/
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+
+/*=============== VARIABLES CSS ===============*/
+:root {
+  /*========== Colors ==========*/
+  --first-color: #1A1C23;
+  --first-color-alt: #3a404d;
+  --border-color: #EAEBE6;
+  --title-color: #1A1C23;
+  --text-color: #8E9BAE;
+  --body-color: #F4F5F0;
+  --container-color: #FFFFFF;
+
+  /*========== Font and typography ==========*/
+  --body-font: "Plus Jakarta Sans", sans-serif;
+  --big-font-size: 1.5rem;
+  --normal-font-size: .938rem;
+  --small-font-size: .813rem;
+}
+
+/*========== Responsive typography ==========*/
+@media screen and (width >= 1150px) {
+  :root {
+    --big-font-size: 2.25rem;
+    --normal-font-size: 1rem;
+    --small-font-size: .875rem;
+  }
+}
+
+/*=============== BASE ===============*/
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+body,
+input,
+button {
+  font-family: var(--body-font);
+  font-size: var(--normal-font-size);
+}
+
+body {
+  background-color: var(--body-color);
+  color: var(--text-color);
+  font-weight: 500;
+  overflow: hidden; /* For auth pages */
+}
+
+input,
+button {
+  border: none;
+  outline: none;
+}
+
+ul {
+  list-style: none;
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/*=============== LOGIN ===============*/
+.login {
+  height: 100vh;
+  display: grid;
+  align-items: center;
+  margin-inline: 1rem;
+}
+
+.login__img {
+  display: none;
+}
+
+.login__content {
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+  padding: 3.5rem 1.5rem;
+  border-radius: 1.5rem;
+  background-color: var(--container-color);
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.login__title {
+  font-size: var(--big-font-size);
+  color: var(--title-color);
+  text-align: center;
+  margin-bottom: 0.75rem;
+  font-weight: 800;
+}
+
+.login__group {
+  display: grid;
+  row-gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.login__box {
+  position: relative;
+  height: 46px;
+  background-color: #F9FAFB;
+  border: 1px solid var(--border-color);
+  border-radius: 0.8rem;
+  display: flex;
+  align-items: center;
+  transition: 0.3s;
+}
+
+.login__box:focus-within {
+  border-color: #1A1C23;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(26, 28, 35, 0.1);
+}
+
+.login__icon {
+  position: absolute;
+  left: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: initial;
+  color: var(--text-color);
+  transition: color 0.3s;
+}
+
+.login__box:focus-within .login__icon {
+  color: var(--first-color);
+}
+
+.login__label {
+  position: absolute;
+  left: 3.25rem;
+  transition: opacity .4s;
+  color: var(--text-color);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.login__input {
+  width: 100%;
+  height: 100%;
+  margin-left: 3.25rem;
+  padding-right: 1rem;
+  font-weight: 600;
+  z-index: 2;
+  background: transparent;
+  color: var(--title-color);
+}
+
+.login__input:focus + .login__label, 
+.login__input:not(:placeholder-shown) + .login__label {
+  opacity: 0;
+}
+
+.login__input:autofill {
+  transition: background-color 6000s, color 6000s;
+}
+
+.login__forgot {
+  display: block;
+  width: max-content;
+  margin: 0 0 0.6rem auto;
+  color: var(--text-color);
+  font-size: var(--small-font-size);
+  font-weight: 600;
+  transition: 0.3s;
+  position: relative;
+  z-index: 10;
+}
+.login__forgot:hover {
+  color: var(--first-color);
+}
+
+.login__button {
+  width: 100%;
+  height: 48px;
+  background-color: var(--first-color);
+  color: #fff;
+  border-radius: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  column-gap: .5rem;
+  margin-bottom: 0.8rem;
+  cursor: pointer;
+  transition: background-color .4s, transform 0.2s;
+  box-shadow: none;
+}
+
+.login__button i {
+  font-weight: initial;
+  font-size: 1.2rem;
+}
+
+.login__button:hover {
+  background-color: var(--first-color-alt);
+  transform: translateY(-2px);
+  box-shadow: none;
+}
+
+/* Custom Additions for Shopy functionality */
+
+.tab-nav {
+  display: flex;
+  background: #F4F5F0;
+  padding: 4px;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border-radius: 0.8rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--text-color);
+  transition: 0.3s;
+}
+
+.tab-item.active {
+  background: #fff;
+  color: var(--title-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.role-section-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-color);
+  margin-bottom: 0.5rem;
+  text-align: left;
+}
+
+.role-selector {
+  display: flex;
+  background: #F4F5F0;
+  padding: 4px;
+  border-radius: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.role-sel-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px;
+  border-radius: 0.8rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.75rem;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: 0.3s;
+}
+
+.role-sel-btn .rdot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #C9D0DB;
+  flex-shrink: 0;
+  transition: 0.2s;
+}
+
+.role-sel-btn.sel-customer {
+  background: #fff;
+  color: var(--title-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.role-sel-btn.sel-customer .rdot { background: var(--title-color); }
+
+.role-sel-btn.sel-retailer {
+  background: #fff;
+  color: var(--title-color);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.role-sel-btn.sel-retailer .rdot { background: var(--title-color); }
+
+.form-slider-wrapper {
+  overflow: hidden;
+  width: 100%;
+  padding-bottom: 15px; /* Gives room for button shadows */
+}
+.form-slider {
+  display: flex;
+  width: 200%;
+  transition: transform 0.5s cubic-bezier(.22, .9, .3, 1);
+}
+.form-page {
+  flex: 0 0 50%;
+}
+
+.form-error {
+  background: rgba(220, 53, 69, 0.09);
+  color: #c0392b;
+  border-radius: 0.8rem;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.login__home {
+  display: inline-block;
+  font-size: var(--small-font-size);
+  color: var(--text-color);
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+  transition: color 0.3s;
+  margin-top: 0.2rem;
+}
+
+.login__home:hover {
+  color: var(--first-color);
+}
+
+.login__sign {
+  text-align: center;
+  font-size: var(--small-font-size);
+  margin-top: 1rem;
+}
+
+.login__sign a {
+  color: var(--title-color);
+}
+
+/*=============== BREAKPOINTS ===============*/
+@media (width >= 540px) {
+  .login {
+    grid-template-columns: 420px;
+    justify-content: center;
+  }
+}
+
+@media (width >= 1150px) {
+  .login {
+    grid-template-columns: initial;
+    justify-content: center;
+    align-content: center;
+  }
+  .login__image {
+    overflow: hidden;
+    border-radius: 2rem;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7f5f0;
+  }
+  .login__img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 2rem;
+  }
+  .login__content {
+    display: grid;
+    grid-template-columns: 380px 460px;
+    column-gap: 4rem;
+    align-items: stretch;
+    padding: 1.25rem 1.25rem 1.25rem 3rem;
+    border-radius: 2.5rem;
+    overflow: hidden;
+    height: auto;
+    min-height: 80vh;
+    max-width: 1050px;
+    margin: 10vh auto;
+  }
+  .login__content > div:first-child {
+    align-self: center;
+  }
+}
