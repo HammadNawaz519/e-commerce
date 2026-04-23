@@ -17,10 +17,7 @@
       --ivory: #f7f2e3;
       --mist: #eef2f7;
       --paper: #ffffff;
-      --hero-bg:
-        radial-gradient(760px 340px at 10% -14%, rgba(52, 77, 120, 0.16), rgba(52, 77, 120, 0) 68%),
-        radial-gradient(780px 420px at 90% 108%, rgba(223, 206, 164, 0.46), rgba(223, 206, 164, 0) 68%),
-        linear-gradient(130deg, var(--ivory) 0%, #ffffff 46%, #f1ead5 100%);
+      --hero-bg: #ffffff;
     }
 
     * {
@@ -51,6 +48,19 @@
       z-index: 50;
       padding: 8px 12px 0;
       background: transparent;
+      transform: translateY(0);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      will-change: transform;
+    }
+
+    .top-ribbon.is-dropped {
+      transform: translateY(12px);
+    }
+
+    .top-ribbon.is-off {
+      transform: translateY(-120%) !important;
+      opacity: 0;
+      pointer-events: none;
     }
 
     .hero-nav {
@@ -59,13 +69,15 @@
       min-height: 48px;
       border-radius: 999px;
       border: 1px solid rgba(216, 226, 242, 0.72);
-      background: rgba(255, 255, 255, 0.96); /* fully white, mostly opaque */
-      backdrop-filter: blur(24px); /* more blur */
-      box-shadow: 0 12px 28px rgba(26, 28, 35, 0.12);
+      background: rgba(248, 247, 244, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 8px 20px rgba(26, 28, 35, 0.12);
       display: flex;
       align-items: center;
       gap: 14px;
       padding: 8px 14px;
+      transform: translateZ(0);
     }
 
     .hero-brand {
@@ -107,6 +119,7 @@
       gap: 10px;
     }
 
+    .hero-contact,
     .hero-signup,
     .hero-signin {
       text-decoration: none;
@@ -119,6 +132,18 @@
       justify-content: center;
       transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
       white-space: nowrap;
+    }
+
+    .hero-contact {
+      color: #1a1c23;
+      border: 1px solid rgba(26, 28, 35, 0.2);
+      background: linear-gradient(135deg, #ffffff 0%, #f8f7f4 100%);
+    }
+
+    .hero-contact:hover {
+      transform: translateY(-1px);
+      border-color: rgba(26, 28, 35, 0.3);
+      box-shadow: 0 8px 16px rgba(26, 28, 35, 0.14);
     }
 
     .hero-signup {
@@ -189,34 +214,110 @@
       overflow: hidden;
       filter: none;
       background: transparent;
+      transform: translateZ(0);
+    }
+
+    body.is-scrolling .headphone-shell spline-viewer {
+      pointer-events: none;
+    }
+
+    .spline-cart-hotspot {
+      position: absolute;
+      left: 62%;
+      top: 57%;
+      width: 126px;
+      height: 38px;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      border-radius: 999px;
+      background: transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.2s ease;
+    }
+
+    .spline-cart-hotspot::after {
+      content: "Login to add to cart";
+      position: absolute;
+      left: 50%;
+      top: -10px;
+      transform: translate(-50%, -100%) scale(0.96);
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: #1a1c23;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(26, 28, 35, 0.2);
+      background: linear-gradient(135deg, #ffffff 0%, #f8f7f4 100%);
+      box-shadow: 0 8px 18px rgba(26, 28, 35, 0.16);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .spline-cart-hotspot:hover::after,
+    .spline-cart-hotspot:focus-visible::after {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
+    }
+
+    .spline-cart-hotspot:focus-visible {
+      outline: 2px solid rgba(26, 28, 35, 0.35);
+      outline-offset: 2px;
+    }
+
+    .showcase-stage {
+      width: 100%;
+      min-height: 100vh;
+      background: #ffffff;
+      position: relative;
+      overflow: hidden;
+      padding: clamp(12px, 2vw, 20px) 0 clamp(40px, 6vw, 80px);
+      scroll-margin-top: 86px;
+      content-visibility: auto;
+      contain-intrinsic-size: 1000px;
+    }
+
+    .showcase-stage::before {
+      content: none;
+    }
+
+    .showcase-stage > * {
+      position: relative;
+      z-index: 1;
     }
 
     .moving-text {
       width: 100%;
       overflow: hidden;
       white-space: nowrap;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 235, 219, 0.9) 100%);
-      border-top: 1px solid rgba(197, 204, 218, 0.74);
-      border-bottom: 1px solid rgba(197, 204, 218, 0.74);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84), 0 10px 24px rgba(26, 28, 35, 0.08);
-      margin-top: clamp(6px, 1.4vw, 12px);
+      background: #ffffff;
+      margin-top: 0;
     }
 
     .moving-track {
       display: flex;
       width: max-content;
-      animation: scrollWords 20s linear infinite;
+      animation: scrollWords 30s linear infinite;
+      will-change: transform;
+      animation-play-state: paused;
+    }
+
+    .showcase-stage.is-active .moving-track {
+      animation-play-state: running;
     }
 
     .moving-con {
       display: flex;
       align-items: center;
       gap: 20px;
-      padding: 14px 20px 14px 0;
+      padding: 12px 20px 12px 0;
     }
 
     .moving-con h2 {
-      font-size: clamp(34px, 7vw, 88px);
+      font-size: clamp(30px, 6vw, 72px);
       line-height: 1;
       white-space: nowrap;
       font-weight: 900;
@@ -225,13 +326,570 @@
     }
 
     .gola {
-      width: 16px;
-      height: 16px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      background: var(--sand);
+      background: var(--ink);
       border: 1px solid rgba(26, 28, 35, 0.2);
       box-shadow: 0 2px 5px rgba(26, 28, 35, 0.14);
       flex-shrink: 0;
+    }
+
+    .slider-container {
+      width: min(1180px, 95vw);
+      height: 60vh;
+      margin: 0 auto;
+      position: absolute;
+      top: 30vh;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    .slider-images {
+      display: flex;
+      align-items: center;
+      gap: 1.5vw;
+      height: 100%;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .slider-images img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+
+    .slider-img {
+      width: 8%;
+      border-radius: 12px;
+      cursor: pointer;
+      position: relative;
+      transition: width 0.7s ease, height 0.7s ease;
+      overflow: hidden;
+      transform: translateZ(0);
+      will-change: width, height;
+    }
+
+    .slider-images .slider-img:first-child, .slider-images .slider-img:last-child {
+      height: 60%;
+    }
+
+    .slider-images .slider-img:nth-child(2), .slider-images .slider-img:nth-child(4) {
+      height: 80%;
+    }
+
+    .slider-images .slider-img:nth-child(3) {
+      height: 100%;
+    }
+
+    .slider-img.active {
+      width: 50% !important;
+      height: 100% !important;
+    }
+
+    .slider-img h1 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 800;
+      text-transform: uppercase;
+      color: #fff;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(270deg);
+      transition: 0.7s ease;
+      white-space: nowrap;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      margin: 0;
+      z-index: 2;
+    }
+
+    .slider-img .details {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      opacity: 0;
+      transition: 0.7s ease;
+      z-index: 2;
+    }
+
+    .slider-img .details h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(20px, 2.5vw, 32px);
+      font-weight: 800;
+      line-height: 1.2;
+      color: #fff;
+      text-transform: uppercase;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      margin-bottom: 4px;
+    }
+
+    .slider-img .details p {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(14px, 1.5vw, 18px);
+      font-weight: 600;
+      line-height: 1.2;
+      color: #fff;
+      text-transform: uppercase;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+
+    .slider-img.active h1 {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .slider-img.active .details {
+      opacity: 1;
+    }
+
+    .slider-img::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 40%, rgba(0,0,0,0.3) 100%);
+      border-radius: 12px;
+      pointer-events: none;
+      transition: opacity 0.7s ease;
+    }
+
+    .slider-img:not(.active)::after {
+      background: rgba(0,0,0,0.25);
+    }
+
+    .contact-stage {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      scroll-margin-top: 90px;
+      content-visibility: auto;
+      contain-intrinsic-size: 900px;
+    }
+
+    .contact-shell {
+      border-radius: 0;
+      overflow: hidden;
+      background: #ffffff;
+      display: grid;
+      grid-template-columns: 0.96fr 1.04fr;
+      min-height: 100vh;
+      box-shadow: none;
+    }
+
+    .contact-left {
+      padding: clamp(30px, 4vw, 52px);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .contact-kicker {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.11em;
+      color: #6f7a90;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .contact-left h2 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(34px, 4.4vw, 56px);
+      line-height: 1.02;
+      letter-spacing: -0.01em;
+      color: #1a1c23;
+      max-width: 440px;
+    }
+
+    .contact-rings {
+      display: none;
+    }
+
+    .ring {
+      display: none;
+    }
+
+    .ring.dashed {
+      display: none;
+    }
+
+    .contact-orbs {
+      margin-top: clamp(20px, 4vw, 34px);
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .contact-orb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      filter: blur(0.6px);
+      opacity: 0.95;
+      animation: orbDrift 4.8s ease-in-out infinite, orbHue 6.2s linear infinite;
+      transform: translateZ(0);
+      will-change: transform, background, box-shadow;
+    }
+
+    .contact-orb:nth-child(1) {
+      background: #d9d6ff;
+      box-shadow: 0 0 22px rgba(126, 115, 255, 0.35);
+      animation-delay: 0s;
+    }
+
+    .contact-orb:nth-child(2) {
+      background: #b7dcff;
+      box-shadow: 0 0 22px rgba(63, 151, 255, 0.35);
+      animation-delay: 0.45s;
+    }
+
+    .contact-orb:nth-child(3) {
+      background: #d3ffe9;
+      box-shadow: 0 0 22px rgba(63, 211, 159, 0.34);
+      animation-delay: 0.85s;
+    }
+
+    .contact-orb:nth-child(4) {
+      background: #ffe0d1;
+      box-shadow: 0 0 22px rgba(255, 139, 79, 0.33);
+      animation-delay: 1.25s;
+    }
+
+    .contact-right {
+      padding: clamp(30px, 4vw, 56px);
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .contact-right::before {
+      content: none;
+    }
+
+    .contact-right h3 {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(30px, 3.4vw, 44px);
+      line-height: 1.05;
+      margin-bottom: clamp(18px, 3vw, 28px);
+      color: #1a1c23;
+      position: relative;
+      z-index: 1;
+    }
+
+    .contact-badges {
+      display: none;
+    }
+
+    .contact-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .contact-line {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .contact-line.full {
+      grid-column: 1 / -1;
+    }
+
+    .contact-line label {
+      font-size: 11px;
+      font-weight: 800;
+      color: #6a768f;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .contact-line input,
+    .contact-line textarea {
+      border: none;
+      border-radius: 0;
+      border-bottom: 1px solid rgba(26, 28, 35, 0.24);
+      background: transparent;
+      padding: 0 0 10px;
+      font-size: 16px;
+      color: #1a1c23;
+      outline: none;
+      resize: none;
+      box-shadow: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .contact-line input::placeholder,
+    .contact-line textarea::placeholder {
+      color: #96a1b5;
+      font-size: 13px;
+    }
+
+    .contact-line input:focus,
+    .contact-line textarea:focus {
+      border-color: #1a1c23;
+    }
+
+    .contact-submit {
+      grid-column: 1 / -1;
+      margin-top: 6px;
+      justify-self: start;
+      padding: 10px 18px;
+      border: none;
+      background: #1a1c23;
+      color: #ffffff;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 18px rgba(26, 28, 35, 0.18);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .contact-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 22px rgba(26, 28, 35, 0.2);
+    }
+
+    .contact-submit:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .contact-email-block {
+      margin-top: auto;
+      padding-top: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .contact-email-label {
+      display: block;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6a768f;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .contact-email-block a {
+      font-size: clamp(13px, 1.35vw, 16px);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: #1a1c23;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .contact-email-block a:hover {
+      color: #394763;
+    }
+
+    .contact-status {
+      min-height: 20px;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .contact-status.ok {
+      color: #14633f;
+    }
+
+    .contact-status.error {
+      color: #a83131;
+    }
+
+    .landing-footer {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      content-visibility: auto;
+      contain-intrinsic-size: 560px;
+    }
+
+    .footer-shell {
+      background: #ffffff;
+      border-radius: 0;
+      overflow: hidden;
+      position: relative;
+      box-shadow: none;
+    }
+
+    .footer-top {
+      padding: clamp(18px, 2.6vw, 28px);
+      display: grid;
+      grid-template-columns: 0.8fr 1fr 1fr;
+      gap: clamp(8px, 1.1vw, 14px);
+      align-items: start;
+      position: relative;
+      z-index: 2;
+    }
+
+    .footer-intro {
+      font-size: clamp(24px, 3vw, 38px);
+      line-height: 1.08;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #1a1c23;
+      max-width: 340px;
+    }
+
+    .footer-col h4 {
+      font-size: 14px;
+      font-weight: 800;
+      color: #1a1c23;
+      margin-bottom: 12px;
+      letter-spacing: 0.01em;
+    }
+
+    .footer-col a {
+      display: block;
+      text-decoration: none;
+      color: #5f6a82;
+      font-size: 14px;
+      margin-bottom: 5px;
+      line-height: 1.2;
+      transition: color 0.2s ease, transform 0.2s ease;
+    }
+
+    .footer-col a:hover {
+      color: #1a1c23;
+      transform: translateX(2px);
+    }
+
+    .footer-social a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 5px 8px;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      background: transparent;
+    }
+
+    .footer-cta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-start;
+    }
+
+    .footer-social a:hover {
+      background: #ffffff;
+      transform: none;
+    }
+
+    .footer-social small {
+      font-size: 12px;
+      color: #7c879e;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .footer-call {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 30px;
+      line-height: 1;
+      font-family: 'Playfair Display', serif;
+      text-decoration: none;
+      color: #1a1c23;
+      margin-left: auto;
+      transition: transform 0.2s ease;
+    }
+
+    .footer-call:hover {
+      transform: translateY(-1px);
+    }
+
+    .footer-call span {
+      display: inline-flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #1a1c23;
+      color: #ffffff;
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      color: #7f8aa1;
+      font-size: 13px;
+    }
+
+    .footer-word {
+      margin: 0;
+      margin-left: clamp(14px, 2vw, 26px);
+      font-size: clamp(84px, 16vw, 210px);
+      line-height: 0.8;
+      letter-spacing: -0.05em;
+      font-weight: 800;
+      color: #0f1118;
+      text-transform: lowercase;
+      user-select: none;
+      pointer-events: none;
+      transform: translate(0, 0);
+      transition: transform 0.28s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      padding: 10px clamp(18px, 2.4vw, 28px) 12px;
+      color: #6f7a90;
+      font-size: 12px;
+      font-weight: 600;
+      position: relative;
+      z-index: 2;
+      background: #ffffff;
+    }
+
+    .footer-bottom-social {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .footer-bottom-social a {
+      color: #4f5d77;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      border-bottom: 1px solid transparent;
+      transition: color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .footer-bottom-social a:hover {
+      color: #1a1c23;
+      border-color: rgba(26, 28, 35, 0.3);
     }
 
     @keyframes settleIn {
@@ -254,9 +912,38 @@
       }
     }
 
+    @keyframes orbDrift {
+      0% {
+        transform: translateY(0) scale(1);
+      }
+      50% {
+        transform: translateY(-6px) scale(1.07);
+      }
+      100% {
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @keyframes orbHue {
+      0% {
+        filter: blur(0.6px) hue-rotate(0deg);
+      }
+      100% {
+        filter: blur(0.6px) hue-rotate(360deg);
+      }
+    }
+
     @media (max-width: 920px) {
       .hero-links {
         display: none;
+      }
+
+      .hero-contact {
+        display: none;
+      }
+
+      .top-ribbon.is-dropped {
+        transform: translateY(8px);
       }
 
       .hero-stage {
@@ -270,11 +957,63 @@
       .headphone-shell {
         width: 100%;
       }
+
+      .spline-cart-hotspot {
+        left: 66%;
+        top: 60%;
+        width: 118px;
+        height: 36px;
+      }
+
+      .slider-container {
+        height: 50vh;
+      }
+
+      .slider-images {
+        gap: 2vw;
+      }
+
+      .slider-img.active {
+        width: 60% !important;
+      }
+
+      .contact-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-left {
+        border-right: none;
+        border-bottom: none;
+      }
+
+      .contact-rings {
+        min-height: 140px;
+      }
+
+      .footer-top {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .footer-cta {
+        align-items: flex-start;
+      }
+
+      .footer-call {
+        margin-left: 0;
+      }
+
+      .footer-word {
+        font-size: clamp(72px, 16vw, 160px);
+      }
     }
 
     @media (max-width: 560px) {
       .top-ribbon {
         padding: 7px 8px 0;
+      }
+
+      .top-ribbon.is-dropped {
+        transform: translateY(6px);
       }
 
       .hero-nav {
@@ -307,6 +1046,88 @@
       .moving-con h2 {
         font-size: clamp(26px, 11vw, 48px);
       }
+
+      .showcase-stage {
+        padding-bottom: 46px;
+      }
+
+      .slider-container {
+        height: 40vh;
+      }
+
+      .slider-img.active {
+        width: 70% !important;
+      }
+
+      .slider-img h1 {
+        font-size: 14px;
+      }
+
+      .slider-img .details h2 {
+        font-size: 20px;
+      }
+
+      .slider-img .details p {
+        font-size: 12px;
+      }
+
+      .spline-cart-hotspot {
+        left: 68%;
+        top: 62%;
+        width: 108px;
+        height: 34px;
+      }
+
+      .contact-right,
+      .contact-left {
+        padding: 24px 18px;
+      }
+
+      .contact-form {
+        grid-template-columns: 1fr;
+      }
+
+      .contact-email-block a {
+        font-size: clamp(16px, 5vw, 22px);
+      }
+
+      .footer-top {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-word {
+        font-size: clamp(58px, 15vw, 112px);
+      }
+
+      .footer-bottom-social {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .contact-orb {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .moving-track {
+        animation: none;
+      }
+
+      .headphone-shell {
+        animation: none;
+      }
+
+      .top-ribbon,
+      .showcase-slide,
+      .footer-word {
+        transition: none;
+      }
+
+      .contact-orb {
+        animation: none;
+      }
     }
   </style>
 </head>
@@ -318,9 +1139,11 @@
       <nav class="hero-links" aria-label="Primary">
         <a href="#home">Home</a>
         <a href="#product-showcase">Product</a>
+        <a href="#contact">Contact</a>
       </nav>
 
       <div class="hero-actions">
+        
         <a class="hero-signup" href="/login?tab=register">Register</a>
         <a class="hero-signin" href="/login?tab=login">Login</a>
       </div>
@@ -332,84 +1155,330 @@
       <div class="hero-content">
         <div class="headphone-scene">
           <div id="headphoneShell" class="headphone-shell">
-            <spline-viewer url="https://prod.spline.design/mBYDUt39dNQz52cU/scene.splinecode"></spline-viewer>
+            
+<spline-viewer url="https://prod.spline.design/uBsy5Mi9HMZ6pGfX/scene.splinecode"></spline-viewer>
+            <a class="spline-cart-hotspot" href="/login?tab=login" aria-label="Go to login to add to cart"></a>
         </div>
       </div>
     </section>
 
-    <section class="moving-text" id="product-showcase" aria-hidden="true">
-      <div class="moving-track">
-        <div class="moving-con">
-          <h2>Minimal</h2>
-          <div class="gola"></div>
-          <h2>Matte</h2>
-          <div class="gola"></div>
-          <h2>Mastered</h2>
-          <div class="gola"></div>
+    <section class="showcase-stage" id="product-showcase" aria-label="Product showcase">
+      <div class="moving-text" aria-hidden="true">
+        <div class="moving-track">
+          <div class="moving-con">
+            <h2> Minimal </h2>
+            <div class="gola"></div>
+            <h2> Matte </h2>
+            <div class="gola"></div>
+            <h2> Mastered </h2>
+            <div class="gola"></div>
+          </div>
+          <div class="moving-con">
+            <h2> Minimal </h2>
+            <div class="gola"></div>
+            <h2> Matte </h2>
+            <div class="gola"></div>
+            <h2> Mastered </h2>
+            <div class="gola"></div>
+          </div>
+          <div class="moving-con">
+            <h2> Minimal </h2>
+            <div class="gola"></div>
+            <h2> Matte </h2>
+            <div class="gola"></div>
+            <h2> Mastered </h2>
+            <div class="gola"></div>
+          </div>
         </div>
-        <div class="moving-con">
-          <h2>Minimal.</h2>
-          <div class="gola"></div>
-          <h2>Matte.</h2>
-          <div class="gola"></div>
-          <h2>Mastered.</h2>
-          <div class="gola"></div>
+      </div>
+
+      <div class="slider-container" id="showcaseSlider" aria-label="Shopy image slider">
+        <div class="slider-images">
+          <div class="slider-img">
+            <img src="/static/uploads/images/Beauty-Demo.webp" alt="Beauty and Makeup" loading="lazy" decoding="async" />
+            <h1>Beauty</h1>
+            <div class="details">
+              <h2>Beauty Essentials</h2>
+              <p>Premium cosmetics and self-care</p>
+            </div>
+          </div>
+          <div class="slider-img">
+            <img src="/static/uploads/images/Earbuds-Demo.webp" alt="Wireless Earbuds" loading="lazy" decoding="async" />
+            <h1>Tech</h1>
+            <div class="details">
+              <h2>Wireless Audio</h2>
+              <p>Sleek design and premium build</p>
+            </div>
+          </div>
+          <div class="slider-img active">
+            <img src="/static/uploads/images/Shopy-1.png" alt="Digital Shopping Experience" loading="lazy" decoding="async" />
+            <h1>Digital</h1>
+            <div class="details">
+              <h2>Modern Marketplace</h2>
+              <p>Fun and vibrant e-commerce</p>
+            </div>
+          </div>
+          <div class="slider-img">
+            <img src="/static/uploads/images/Shopy-2.webp" alt="Lifestyle Flat Lay" loading="lazy" decoding="async" />
+            <h1>Lifestyle</h1>
+            <div class="details">
+              <h2>Everyday Style</h2>
+              <p>Tech-integrated contemporary living</p>
+            </div>
+          </div>
+          <div class="slider-img">
+            <img src="/static/uploads/images/Shopy-3.webp" alt="Retail Product Grid" loading="lazy" decoding="async" />
+            <h1>Variety</h1>
+            <div class="details">
+              <h2>Endless Variety</h2>
+              <p>Fashion, travel, and accessories</p>
+            </div>
+          </div>
         </div>
-        <div class="moving-con">
-          <h2>Minimal.</h2>
-          <div class="gola"></div>
-          <h2>Matte.</h2>
-          <div class="gola"></div>
-          <h2>Mastered.</h2>
-          <div class="gola"></div>
+      </div>
+    </section>
+
+    <section class="contact-stage" id="contact" aria-label="Contact section">
+      <div class="contact-shell">
+        <aside class="contact-left">
+          <p class="contact-kicker">Shopy support</p>
+          <h2>We'd love to hear from you</h2>
+
+          <div class="contact-orbs" aria-hidden="true">
+            <span class="contact-orb"></span>
+            <span class="contact-orb"></span>
+            <span class="contact-orb"></span>
+            <span class="contact-orb"></span>
+          </div>
+        </aside>
+
+        <div class="contact-right">
+          <h3>Contact us</h3>
+
+          <form id="landingContactForm" class="contact-form" novalidate>
+            <div class="contact-line">
+              <label for="contactFirstName">First Name</label>
+              <input id="contactFirstName" name="first_name" type="text" placeholder="Enter your first name" required>
+            </div>
+
+            <div class="contact-line">
+              <label for="contactLastName">Last Name</label>
+              <input id="contactLastName" name="last_name" type="text" placeholder="Enter your last name">
+            </div>
+
+            <div class="contact-line">
+              <label for="contactEmail">Email</label>
+              <input id="contactEmail" name="email" type="email" placeholder="Enter your email" required>
+            </div>
+
+            <div class="contact-line">
+              <label for="contactPhone">Phone Number</label>
+              <input id="contactPhone" name="phone" type="text" placeholder="Enter your phone number">
+            </div>
+
+            <div class="contact-line full">
+              <label for="contactMessage">Message</label>
+              <textarea id="contactMessage" name="message" rows="2" placeholder="Enter your message" required></textarea>
+            </div>
+
+            <button type="submit" class="contact-submit">
+              Submit <span aria-hidden="true">&rarr;</span>
+            </button>
+          </form>
+
+          <div class="contact-email-block">
+            <span class="contact-email-label">Email us</span>
+            <a href="mailto:hammadnawaz519@gmail.com">hammadnawaz519@gmail.com</a>
+          </div>
+
+          <p id="contactStatus" class="contact-status" role="status" aria-live="polite"></p>
         </div>
       </div>
     </section>
   </main>
 
+  <footer class="landing-footer" aria-label="Site footer">
+    <div class="footer-shell" id="footerShell">
+      <div class="footer-top">
+        <div class="footer-col">
+          <h4>Explore</h4>
+          <a href="#home">Home</a>
+          <a href="#product-showcase">Product</a>
+          <a href="#contact">Contact</a>
+        </div>
+
+        <div class="footer-col footer-social">
+          <h4>Follow us</h4>
+          <a href="https://instagram.com/_hammadnawaz" target="_blank" rel="noopener noreferrer">
+            Instagram
+            <small>@_hammadnawaz</small>
+          </a>
+          <a href="https://www.linkedin.com/in/hammadnawaz519" target="_blank" rel="noopener noreferrer">
+            LinkedIn
+            <small>hammadnawaz519</small>
+          </a>
+          <a href="https://x.com/_hammadnawaz" target="_blank" rel="noopener noreferrer">
+            Twitter
+            <small>@_hammadnawaz</small>
+          </a>
+        </div>
+
+        <div class="footer-col footer-cta">
+          <a class="footer-call" href="#contact">Contact Shopy <span>&#8599;</span></a>
+        </div>
+      </div>
+
+      <p class="footer-word" id="footerWord" aria-hidden="true">shopy</p>
+
+      <div class="footer-bottom">
+        <span>Shopy 2026</span>
+        <span>hammadnawaz519@gmail.com</span>
+        <div class="footer-bottom-social">
+          <a href="https://instagram.com/_hammadnawaz" target="_blank" rel="noopener noreferrer">Instagram</a>
+          <a href="https://www.linkedin.com/in/hammadnawaz519" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href="https://x.com/_hammadnawaz" target="_blank" rel="noopener noreferrer">Twitter</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <script>
     (function () {
-      const shell = document.getElementById('headphoneShell');
-      if (!shell) return;
+      const form = document.getElementById('landingContactForm');
+      const status = document.getElementById('contactStatus');
+      if (!form || !status) return;
 
-      let currentY = 0;
-      let currentRotate = 0;
-      let currentScale = 1;
+      const submitBtn = form.querySelector('.contact-submit');
 
-      let targetY = 0;
-      let targetRotate = 0;
-      let targetScale = 1;
+      form.addEventListener('submit', async function (event) {
+        event.preventDefault();
 
-      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+        const firstName = (form.first_name.value || '').trim();
+        const email = (form.email.value || '').trim();
+        const message = (form.message.value || '').trim();
 
-      function updateTargets() {
-        const scrollTop = window.scrollY || window.pageYOffset || 0;
-        const viewport = window.innerHeight || 1;
+        if (!firstName || !email || !message) {
+          status.className = 'contact-status error';
+          status.textContent = 'Please fill first name, email, and message.';
+          return;
+        }
 
-        const progress = clamp(scrollTop / (viewport * 1.2), 0, 1);
-        const rise = progress * 220;
+        submitBtn.disabled = true;
+        status.className = 'contact-status';
+        status.textContent = 'Sending...';
 
-        targetY = -rise;
-        targetRotate = progress * 14;
-        targetScale = 1 - progress * 0.07;
+        const payload = {
+          first_name: firstName,
+          last_name: (form.last_name.value || '').trim(),
+          email: email,
+          phone: (form.phone.value || '').trim(),
+          message: message,
+        };
+
+        try {
+          const response = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+          let result = {};
+          try {
+            result = await response.json();
+          } catch (e) {
+            result = {};
+          }
+
+          if (response.ok && result.success) {
+            status.className = 'contact-status ok';
+            status.textContent = result.message || 'Message sent successfully.';
+            form.reset();
+          } else {
+            status.className = 'contact-status error';
+            status.textContent = result.message || 'Could not send right now. Please try again.';
+          }
+        } catch (err) {
+          status.className = 'contact-status error';
+          status.textContent = 'Network error. Please try again.';
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      const ribbon = document.querySelector('.top-ribbon');
+      const showcaseStage = document.getElementById('product-showcase');
+      const slides = Array.from(document.querySelectorAll('.slider-img'));
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!showcaseStage || slides.length === 0) {
+        return;
       }
 
-      function animate() {
-        currentY += (targetY - currentY) * 0.1;
-        currentRotate += (targetRotate - currentRotate) * 0.1;
-        currentScale += (targetScale - currentScale) * 0.1;
+      slides.forEach(function (slide) {
+        slide.addEventListener('click', function () {
+          slides.forEach(s => s.classList.remove('active'));
+          this.classList.add('active');
+        });
+      });
 
-        shell.style.transform =
-          `translate3d(0, ${currentY.toFixed(2)}px, 0) rotate(${currentRotate.toFixed(2)}deg) scale(${currentScale.toFixed(4)})`;
+      let isScrollingTimer;
+      window.addEventListener('scroll', function() {
+        if (!document.body.classList.contains('is-scrolling')) {
+          document.body.classList.add('is-scrolling');
+        }
+        window.clearTimeout(isScrollingTimer);
+        isScrollingTimer = window.setTimeout(function() {
+          document.body.classList.remove('is-scrolling');
+        }, 150);
+      }, { passive: true });
 
-        requestAnimationFrame(animate);
+      function syncRibbon() {
+        if (!ribbon) {
+          return;
+        }
+
+        const shouldDrop = window.scrollY > 60;
+        if (ribbon.classList.contains('is-dropped') !== shouldDrop) {
+          ribbon.classList.toggle('is-dropped', shouldDrop);
+        }
       }
 
-      window.addEventListener('scroll', updateTargets, { passive: true });
-      window.addEventListener('resize', updateTargets);
+      syncRibbon();
 
-      updateTargets();
-      requestAnimationFrame(animate);
+      window.addEventListener('scroll', syncRibbon, { passive: true });
+      window.addEventListener('resize', syncRibbon);
+
+      if ('IntersectionObserver' in window) {
+        const stageObserver = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              showcaseStage.classList.add('is-active');
+            } else {
+              showcaseStage.classList.remove('is-active');
+            }
+          });
+        }, {
+          threshold: 0.3,
+        });
+
+        stageObserver.observe(showcaseStage);
+
+        const homeStage = document.getElementById('home');
+        if (homeStage && ribbon) {
+          const homeObs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+              ribbon.classList.toggle('is-off', !entry.isIntersecting);
+            });
+          }, { threshold: 0.1 });
+          homeObs.observe(homeStage);
+        }
+      } else {
+        showcaseStage.classList.add('is-active');
+      }
     })();
   </script>
 </body>

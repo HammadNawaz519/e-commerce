@@ -1,4 +1,4 @@
-﻿
+
 import os
 import re
 import json
@@ -16,6 +16,8 @@ import mysql.connector
 import requests as http_requests
 from dotenv import load_dotenv
 from prompts import ask_sage_with_context
+from security import validate_user_input, validate_ai_output
+from langchain_pipeline import ask_sage_langchain
 
 load_dotenv(override=True)
 
@@ -35,10 +37,38 @@ mail = Mail(app)
 
 # ---------------- DATABASE ----------------
 def get_db():
+    db_user = (os.getenv("APP_DB_USER") or os.getenv("DB_USER") or "").strip()
+    db_password = os.getenv("APP_DB_PASSWORD")
+    if db_password is None:
+        db_password = os.getenv("DB_PASSWORD", "")
+    if not db_user:
+        raise RuntimeError("Database user is not configured. Set APP_DB_USER or DB_USER.")
+
     return mysql.connector.connect(
         host=os.getenv("DB_HOST", "localhost"),
-        user=os.getenv("DB_USER", "root"),
-        password=os.getenv("DB_PASSWORD", ""),
+        user=db_user,
+        password=db_password,
+        database=os.getenv("DB_NAME", "shopy"),
+        autocommit=True
+    )
+
+def get_readonly_db():
+    """Read-only DB connection for the AI pipeline (Phase 3 — Least Privilege).
+    Uses READ_DB_USER / READ_DB_PASSWORD when configured."""
+    ro_user = (os.getenv("READ_DB_USER") or os.getenv("DB_USER") or "").strip()
+    ro_password = os.getenv("READ_DB_PASSWORD")
+    if ro_password is None:
+        ro_password = os.getenv("DB_PASSWORD", "")
+
+    if not ro_user:
+        raise RuntimeError("Read-only DB user is not configured. Set READ_DB_USER.")
+    if ro_user.lower() == "root":
+        raise RuntimeError("Read-only DB user cannot be root. Configure READ_DB_USER with least privilege.")
+
+    return mysql.connector.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        user=ro_user,
+        password=ro_password,
         database=os.getenv("DB_NAME", "shopy"),
         autocommit=True
     )
@@ -47,10 +77,18 @@ def ensure_db_exists():
     """Create the database if it doesn't exist yet."""
     try:
         db_name = os.getenv("DB_NAME", "shopy")
+        admin_user = (os.getenv("APP_DB_USER") or os.getenv("DB_USER") or "").strip()
+        admin_password = os.getenv("APP_DB_PASSWORD")
+        if admin_password is None:
+            admin_password = os.getenv("DB_PASSWORD", "")
+
+        if not admin_user:
+            raise RuntimeError("Database user is not configured. Set APP_DB_USER or DB_USER.")
+
         conn = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
+            user=admin_user,
+            password=admin_password,
             autocommit=True
         )
         cur = conn.cursor()
@@ -578,6 +616,14 @@ def landing_contact():
     if detail:
         app.logger.warning(f'Resend API error: {detail}')
     return jsonify({'success': False, 'message': detail or 'Mail service rejected the request.'}), 502
+
+@app.route('/signup')
+def signup_page():
+    """Dark-themed OnlyPipe-style signup page."""
+    if session.get('user_id'):
+        return redirect('/retailer/dashboard' if session.get('role') == 'retailer' else '/shop')
+    return render_template('auth_dark.html')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1668,6 +1714,15 @@ def ai_chat():
     if not question:
         return jsonify({'error': 'No message provided'}), 400
 
+    # ── LAYER 2: Keyword Blocklist — scan input BEFORE it reaches the LLM ──
+    input_safe, input_msg = validate_user_input(question)
+    if not input_safe:
+        return jsonify({
+            'reply': input_msg,
+            'query_ran': f'User Question: {question}\nStatus: BLOCKED by Layer 2 — Keyword Blocklist',
+            'db_output': 'No database query was executed. Input was rejected by security filter.'
+        })
+
     role    = session.get('role', 'customer')
     user_id = session.get('user_id')
 
@@ -1678,11 +1733,22 @@ def ai_chat():
     db = None
 
     try:
-        db = get_db()
-        payload = ask_sage_with_context(question, role, user_id, db)
-        answer = (payload.get('answer') or '').strip() or 'No response.'
+        # ── Phase 2: True text-to-SQL via LangChain + OpenRouter ──────────────
+        # ask_sage_langchain generates real SQL using the LLM, executes it
+        # against the read-only database, then synthesizes a plain-English answer.
+        # It returns {'query_ran', 'db_output', 'answer'} — same keys as before.
+        payload = ask_sage_langchain(question, role, user_id)
+        answer    = (payload.get('answer') or '').strip() or 'No response.'
         query_ran = payload.get('query_ran') or f'User Question: {question}'
         db_output = payload.get('db_output') or 'No database output available.'
+
+        # ── LAYER 4: Output Validation — check AI response BEFORE displaying ──
+        output_safe, sanitized = validate_ai_output(answer)
+        if not output_safe:
+            answer = sanitized
+
+        # Persisting chat history requires INSERT permission.
+        db = get_db()
     except Exception as e:
         answer = f"Something went wrong: {str(e)[:100]}"
         query_ran = f'User Question: {question}'

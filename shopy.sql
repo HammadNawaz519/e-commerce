@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 -- SHOPY - PHASE 1 READY SQL (CS-254 Final Project)
 -- Domain: E-Commerce
 -- Goal: 3NF-friendly relational schema + realistic seed data
@@ -9,26 +9,24 @@ USE shopy;
 SET NAMES utf8mb4;
 
 -- ============================================================
--- 1) CORE TABLES (Normalized, with PK/FK and useful indexes)
+-- 1) CORE TABLES (Normalized, PK/FK-focused)
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS users (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     username      VARCHAR(80)  NOT NULL,
     phone_number  VARCHAR(30)  DEFAULT NULL,
-    email         VARCHAR(120) NOT NULL UNIQUE,
+    email         VARCHAR(120) NOT NULL,
     password      VARCHAR(256) NOT NULL,
     verified      TINYINT(1)   NOT NULL DEFAULT 0,
     role          VARCHAR(20)  NOT NULL DEFAULT 'customer',
     profile_pic   TEXT         DEFAULT NULL,
     bio           TEXT         DEFAULT NULL,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_users_email (email),
-    INDEX idx_users_phone (phone_number),
-    INDEX idx_users_role (role)
-) ENGINE=InnoDB;
+    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS categories (
     id            INT AUTO_INCREMENT PRIMARY KEY,
     name          VARCHAR(100) NOT NULL,
@@ -36,12 +34,10 @@ CREATE TABLE IF NOT EXISTS categories (
     description   VARCHAR(255) DEFAULT NULL,
     is_active     TINYINT(1)   NOT NULL DEFAULT 1,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_categories_name (name),
-    UNIQUE KEY uq_categories_slug (slug),
-    INDEX idx_categories_active (is_active)
-) ENGINE=InnoDB;
+    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS products (
     id             INT AUTO_INCREMENT PRIMARY KEY,
     retailer_id    INT           NOT NULL,
@@ -58,13 +54,10 @@ CREATE TABLE IF NOT EXISTS products (
     created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (retailer_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL,
-    UNIQUE KEY uq_products_sku (sku),
-    INDEX idx_prod_retailer (retailer_id),
-    INDEX idx_prod_category (category_id),
-    INDEX idx_prod_active (is_active)
-) ENGINE=InnoDB;
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS product_images (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     product_id          INT          NOT NULL,
@@ -75,11 +68,10 @@ CREATE TABLE IF NOT EXISTS product_images (
     uploaded_by_user_id INT          DEFAULT NULL,
     created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_pi_product (product_id),
-    INDEX idx_pi_primary (product_id, is_primary)
-) ENGINE=InnoDB;
+    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE SET NULL
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS discount_codes (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     code            VARCHAR(50)   NOT NULL,
@@ -91,11 +83,10 @@ CREATE TABLE IF NOT EXISTS discount_codes (
     uses_count      INT           NOT NULL DEFAULT 0,
     expires_at      DATETIME      DEFAULT NULL,
     is_active       TINYINT(1)    NOT NULL DEFAULT 1,
-    created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_discount_code (code),
-    INDEX idx_dc_active (is_active)
-) ENGINE=InnoDB;
+    created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS addresses (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     user_id      INT          NOT NULL,
@@ -109,11 +100,10 @@ CREATE TABLE IF NOT EXISTS addresses (
     country      VARCHAR(100) NOT NULL DEFAULT 'Pakistan',
     is_default   TINYINT(1)   NOT NULL DEFAULT 0,
     created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_addr_user (user_id),
-    INDEX idx_addr_default (user_id, is_default)
-) ENGINE=InnoDB;
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS orders (
     id               INT AUTO_INCREMENT PRIMARY KEY,
     customer_id      INT           NOT NULL,
@@ -131,12 +121,10 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (discount_code_id) REFERENCES discount_codes(id) ON DELETE SET NULL,
-    INDEX idx_order_customer (customer_id),
-    INDEX idx_order_status (status),
-    INDEX idx_order_payment_status (payment_status)
-) ENGINE=InnoDB;
+    FOREIGN KEY (discount_code_id) REFERENCES discount_codes(id) ON DELETE SET NULL
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS order_items (
     id                INT AUTO_INCREMENT PRIMARY KEY,
     order_id          INT           NOT NULL,
@@ -148,12 +136,10 @@ CREATE TABLE IF NOT EXISTS order_items (
     discount_per_unit DECIMAL(10,2) NOT NULL DEFAULT 0,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    FOREIGN KEY (retailer_id) REFERENCES users(id) ON DELETE SET NULL,
-    INDEX idx_oi_order (order_id),
-    INDEX idx_oi_product (product_id),
-    INDEX idx_oi_retailer (retailer_id)
-) ENGINE=InnoDB;
+    FOREIGN KEY (retailer_id) REFERENCES users(id) ON DELETE SET NULL
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS cart (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     user_id     INT        NOT NULL,
@@ -161,12 +147,11 @@ CREATE TABLE IF NOT EXISTS cart (
     quantity    INT        NOT NULL DEFAULT 1,
     added_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_cart_user_product (user_id, product_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    INDEX idx_cart_user (user_id)
-) ENGINE=InnoDB;
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS wishlists (
     id                    INT AUTO_INCREMENT PRIMARY KEY,
     user_id               INT           NOT NULL,
@@ -177,12 +162,11 @@ CREATE TABLE IF NOT EXISTS wishlists (
     note                  VARCHAR(255)  DEFAULT NULL,
     added_at              TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (priority BETWEEN 1 AND 5),
-    UNIQUE KEY uq_wishlist_user_product (user_id, product_id),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    INDEX idx_wishlist_user (user_id)
-) ENGINE=InnoDB;
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS reviews (
     id                   INT AUTO_INCREMENT PRIMARY KEY,
     product_id           INT          NOT NULL,
@@ -193,12 +177,11 @@ CREATE TABLE IF NOT EXISTS reviews (
     is_verified_purchase TINYINT(1)   NOT NULL DEFAULT 0,
     created_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (rating BETWEEN 1 AND 5),
-    UNIQUE KEY uq_review_product_user (product_id, user_id),
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_review_product (product_id)
-) ENGINE=InnoDB;
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS ai_chat_history (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     user_id    INT NOT NULL,
@@ -206,11 +189,10 @@ CREATE TABLE IF NOT EXISTS ai_chat_history (
     sender     ENUM('user','bot') NOT NULL,
     message    TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_ach_user (user_id),
-    INDEX idx_ach_created (user_id, created_at)
-) ENGINE=InnoDB;
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS notifications (
     id          INT AUTO_INCREMENT PRIMARY KEY,
     user_id     INT          NOT NULL,
@@ -220,11 +202,10 @@ CREATE TABLE IF NOT EXISTS notifications (
     action_url  VARCHAR(255) DEFAULT NULL,
     is_read     TINYINT(1)   NOT NULL DEFAULT 0,
     created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_notif_user (user_id),
-    INDEX idx_notif_read (user_id, is_read)
-) ENGINE=InnoDB;
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 -- Added for Phase-1 completeness in e-commerce domain
 CREATE TABLE IF NOT EXISTS payments (
     id              INT AUTO_INCREMENT PRIMARY KEY,
@@ -236,11 +217,10 @@ CREATE TABLE IF NOT EXISTS payments (
     transaction_ref VARCHAR(120)  DEFAULT NULL,
     paid_at         DATETIME      DEFAULT NULL,
     created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_payment_order_txn (order_id, transaction_ref),
-    INDEX idx_payment_status (payment_status)
-) ENGINE=InnoDB;
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 -- Added for Phase-1 completeness in e-commerce domain
 CREATE TABLE IF NOT EXISTS shipments (
     id                INT AUTO_INCREMENT PRIMARY KEY,
@@ -253,11 +233,10 @@ CREATE TABLE IF NOT EXISTS shipments (
     delivered_at      DATETIME      DEFAULT NULL,
     shipping_cost     DECIMAL(10,2) NOT NULL DEFAULT 0,
     created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    UNIQUE KEY uq_shipment_tracking (tracking_number),
-    INDEX idx_shipment_status (shipment_status)
-) ENGINE=InnoDB;
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
 
+
+) ENGINE=InnoDB;
 -- ============================================================
 -- 2) REALISTIC SAMPLE DATA (>= 10 rows per table)
 -- ============================================================
@@ -672,3 +651,5 @@ shipping_cost = VALUES(shipping_cost);
 -- JOIN order_items oi ON oi.order_id = o.id
 -- GROUP BY o.id, u.username, o.status
 -- ORDER BY o.id;
+
+

@@ -1,0 +1,130 @@
+================================================================================
+  PHASE 1 SUBMISSION REPORT
+  Project: Shopy — E-Commerce Conversational Database Assistant
+  Domain:  E-Commerce
+  Authors: Hammad Nawaz & Mobeen
+  Course:  CS-254 Database Systems, ITU — Spring 2026
+================================================================================
+
+DOMAIN JUSTIFICATION
+────────────────────
+We selected the E-Commerce domain because it naturally and organically
+produces a rich set of inter-related entities. A real online marketplace
+requires users who are either shoppers or sellers, products belonging to
+categories, orders that contain many products, payments and shipments
+per order, user reviews and wishlists, and promotional discount codes —
+all producing genuine many-to-many relationships that must be resolved
+through junction tables. E-Commerce data changes constantly (stock
+updates, new orders, fresh reviews) making the live, dynamic nature of
+our AI assistant clearly visible during every demonstration.
+
+SCHEMA SUMMARY — 15 TABLES
+───────────────────────────
+  Table               Rows    Description
+  ──────────────────────────────────────────────────────────────────────
+  users               15      Customers and retailers (role-based)
+  categories          10      Product classification taxonomy
+  products            20      Full catalog with SKU, pricing, stock
+  product_images      20      Multi-image gallery per product (1:N)
+  discount_codes      10      Promotional coupons with usage tracking
+  addresses           12      Shipping addresses per user (1:N)
+  orders              12      Purchase orders, status, payment info
+  order_items         24      Junction: Orders ↔ Products (M:N)
+  cart                10      Junction: Users ↔ Products (M:N)
+  wishlists           12      Junction: Users ↔ Products (M:N)
+  reviews             15      Junction: Users ↔ Products (M:N)
+  ai_chat_history     10      AI conversation logs per user
+  notifications       12      In-app, SMS, and email alerts
+  payments            12      Payment transaction records
+  shipments           10      Courier and tracking records
+  ──────────────────────────────────────────────────────────────────────
+  TOTAL              190 rows across 15 tables
+
+MANY-TO-MANY RELATIONSHIPS RESOLVED VIA JUNCTION TABLES
+─────────────────────────────────────────────────────────
+  Junction Table    Entities Linked            Extra Attributes
+  ─────────────────────────────────────────────────────────────────────
+  order_items       orders ↔ products          quantity, unit_price,
+                                               discount_per_unit,
+                                               retailer_id
+  cart              users ↔ products           quantity, updated_at
+  wishlists         users ↔ products           priority, target_price,
+                                               notify_on_price_drop,
+                                               note
+  reviews           users ↔ products           rating, title, comment,
+                                               is_verified_purchase
+
+NORMALIZATION STATEMENT — 3NF
+──────────────────────────────
+  1NF: Every column holds exactly one atomic value. Addresses, phone
+       numbers, and product images are stored in their own dedicated
+       rows — no comma-separated multi-values anywhere.
+
+  2NF: Every non-key column depends on the FULL primary key. All
+       tables use single-column AUTO_INCREMENT surrogate PKs, so 2NF
+       is automatically satisfied across the schema.
+
+  3NF: No non-key column depends on another non-key column.
+       - Shipping city/province live in the addresses table, not in
+         orders (which only stores a snapshot shipping_address string).
+       - Category details live in categories, not duplicated in
+         products.
+       - Payment details live in payments, not repeated in orders
+         (orders only stores the method and a reference code).
+       - Courier tracking lives in shipments, not in orders.
+
+FOREIGN KEY CONSTRAINTS
+───────────────────────
+  Every inter-table reference uses an explicit FOREIGN KEY declaration
+  (not just matching column names). Cascade rules:
+    ON DELETE CASCADE  — child rows removed when parent is deleted
+    ON DELETE SET NULL — child FK set to NULL (where data must persist
+                         for historical record, e.g. order_items after
+                         a product is soft-deleted)
+
+PRIMARY KEY DECLARATIONS
+─────────────────────────
+  Every table declares a single-column INT AUTO_INCREMENT PRIMARY KEY.
+  Junction tables additionally enforce UNIQUE KEY constraints on their
+  composite pairs (e.g., UNIQUE KEY uq_cart_user_product (user_id,
+  product_id)) to prevent duplicate rows while retaining a surrogate PK.
+
+FULL SQL FILE
+─────────────
+  All CREATE TABLE statements and INSERT statements are contained in:
+    shopy.sql  (45 899 bytes, 675 lines)
+
+  The schema is also auto-created at runtime by init_db() in app.py
+  (lines 204–420) using CREATE TABLE IF NOT EXISTS, ensuring the
+  application is self-bootstrapping from a clean MySQL server.
+
+ERD
+───
+  Produced in draw.io. The diagram shows all 15 table names, all
+  column names, PK/FK annotations, cardinality notation (1, N, M),
+  and relationship lines. Exported as high-resolution PNG and embedded
+  in the final report PDF.
+
+VALIDATION QUERY
+────────────────
+  Run after importing shopy.sql to confirm all row counts:
+
+  SELECT 'users' AS t, COUNT(*) FROM users
+  UNION ALL SELECT 'categories', COUNT(*) FROM categories
+  UNION ALL SELECT 'products', COUNT(*) FROM products
+  UNION ALL SELECT 'product_images', COUNT(*) FROM product_images
+  UNION ALL SELECT 'discount_codes', COUNT(*) FROM discount_codes
+  UNION ALL SELECT 'addresses', COUNT(*) FROM addresses
+  UNION ALL SELECT 'orders', COUNT(*) FROM orders
+  UNION ALL SELECT 'order_items', COUNT(*) FROM order_items
+  UNION ALL SELECT 'cart', COUNT(*) FROM cart
+  UNION ALL SELECT 'wishlists', COUNT(*) FROM wishlists
+  UNION ALL SELECT 'reviews', COUNT(*) FROM reviews
+  UNION ALL SELECT 'ai_chat_history', COUNT(*) FROM ai_chat_history
+  UNION ALL SELECT 'notifications', COUNT(*) FROM notifications
+  UNION ALL SELECT 'payments', COUNT(*) FROM payments
+  UNION ALL SELECT 'shipments', COUNT(*) FROM shipments;
+
+================================================================================
+END OF PHASE 1 REPORT
+================================================================================
