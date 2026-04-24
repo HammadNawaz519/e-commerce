@@ -9,7 +9,7 @@
   --border-color: #EAEBE6;
   --title-color: #1A1C23;
   --text-color: #8E9BAE;
-  --body-color: #F4F5F0;
+  --body-color: #ffffff;
   --container-color: #FFFFFF;
 
   /*========== Font and typography ==========*/
@@ -20,7 +20,7 @@
 }
 
 /*========== Responsive typography ==========*/
-@media screen and (width >= 1150px) {
+@media screen and (width >=1150px) {
   :root {
     --big-font-size: 2.25rem;
     --normal-font-size: 1rem;
@@ -46,7 +46,8 @@ body {
   background-color: var(--body-color);
   color: var(--text-color);
   font-weight: 500;
-  overflow: hidden; /* For auth pages */
+  overflow: hidden;
+  /* For auth pages */
 }
 
 input,
@@ -86,7 +87,7 @@ img {
   padding: 3.5rem 1.5rem;
   border-radius: 1.5rem;
   background-color: var(--container-color);
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .login__title {
@@ -153,8 +154,8 @@ img {
   color: var(--title-color);
 }
 
-.login__input:focus + .login__label, 
-.login__input:not(:placeholder-shown) + .login__label {
+.login__input:focus+.login__label,
+.login__input:not(:placeholder-shown)+.login__label {
   opacity: 0;
 }
 
@@ -173,6 +174,7 @@ img {
   position: relative;
   z-index: 10;
 }
+
 .login__forgot:hover {
   color: var(--first-color);
 }
@@ -270,7 +272,8 @@ img {
 }
 
 .role-sel-btn .rdot {
-  width: 7px; height: 7px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
   background: #C9D0DB;
   flex-shrink: 0;
@@ -280,27 +283,36 @@ img {
 .role-sel-btn.sel-customer {
   background: #fff;
   color: var(--title-color);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
-.role-sel-btn.sel-customer .rdot { background: var(--title-color); }
+
+.role-sel-btn.sel-customer .rdot {
+  background: var(--title-color);
+}
 
 .role-sel-btn.sel-retailer {
   background: #fff;
   color: var(--title-color);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
-.role-sel-btn.sel-retailer .rdot { background: var(--title-color); }
+
+.role-sel-btn.sel-retailer .rdot {
+  background: var(--title-color);
+}
 
 .form-slider-wrapper {
   overflow: hidden;
   width: 100%;
-  padding-bottom: 15px; /* Gives room for button shadows */
+  padding-bottom: 15px;
+  /* Gives room for button shadows */
 }
+
 .form-slider {
   display: flex;
   width: 200%;
   transition: transform 0.5s cubic-bezier(.22, .9, .3, 1);
 }
+
 .form-page {
   flex: 0 0 50%;
 }
@@ -343,19 +355,20 @@ img {
 }
 
 /*=============== BREAKPOINTS ===============*/
-@media (width >= 540px) {
+@media (width >=540px) {
   .login {
     grid-template-columns: 420px;
     justify-content: center;
   }
 }
 
-@media (width >= 1150px) {
+@media (width >=1150px) {
   .login {
     grid-template-columns: initial;
     justify-content: center;
     align-content: center;
   }
+
   .login__image {
     overflow: hidden;
     border-radius: 2rem;
@@ -365,6 +378,7 @@ img {
     justify-content: center;
     background: #f7f5f0;
   }
+
   .login__img {
     display: block;
     width: 100%;
@@ -372,6 +386,7 @@ img {
     object-fit: cover;
     border-radius: 2rem;
   }
+
   .login__content {
     display: grid;
     grid-template-columns: 380px 460px;
@@ -385,7 +400,8 @@ img {
     max-width: 1050px;
     margin: 10vh auto;
   }
-  .login__content > div:first-child {
+
+  .login__content>div:first-child {
     align-self: center;
   }
 }

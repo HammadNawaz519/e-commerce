@@ -138,14 +138,51 @@
       });
     });
 
-    form.addEventListener('submit',(e)=>{
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
       const code = inputs.map(i=>i.value||'').join('');
       if(code.length !== 6){
-        e.preventDefault();
         inputs[0].focus();
         return;
       }
       hidden.value = code;
+
+      const submitBtn = form.querySelector('.login__button');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = 'Processing...';
+      submitBtn.disabled = true;
+
+      try {
+        const formData = new FormData(form);
+        const response = await fetch(window.location.href, {
+          method: 'POST',
+          body: formData,
+          redirect: 'follow'
+        });
+
+        const finalUrl = new URL(response.url);
+
+        if (finalUrl.searchParams.has('error')) {
+          let errorDiv = document.querySelector('.form-error');
+          if (!errorDiv) {
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'form-error';
+            form.parentElement.insertBefore(errorDiv, form);
+          }
+          errorDiv.textContent = finalUrl.searchParams.get('error');
+          
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        } else {
+          // Success, navigate to dashboard/intended URL
+          window.location.href = finalUrl.href;
+        }
+      } catch (err) {
+        console.error(err);
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+      }
     });
 
     function startTimer(sec){

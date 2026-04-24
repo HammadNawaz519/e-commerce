@@ -474,6 +474,70 @@ def landing_page():
     return render_template('landing.html')
 
 
+@app.route('/home')
+@login_required
+def customer_home():
+    uid = session['user_id']
+    db  = get_db()
+    cur = db.cursor(dictionary=True)
+
+    cur.execute("SELECT COUNT(*) as cnt FROM orders WHERE customer_id=%s AND status NOT IN ('delivered','cancelled')", (uid,))
+    active_orders = cur.fetchone()['cnt']
+
+    cur.execute("SELECT COUNT(*) as cnt FROM wishlists WHERE user_id=%s", (uid,))
+    wishlist_count = cur.fetchone()['cnt']
+
+    cur.execute("""
+        SELECT COALESCE(SUM(p.price * c.quantity), 0) as total, COALESCE(SUM(c.quantity), 0) as cnt
+        FROM cart c JOIN products p ON p.id = c.product_id
+        WHERE c.user_id=%s AND p.is_active=1
+    """, (uid,))
+    cart_row = cur.fetchone()
+    cart_total = float(cart_row['total'])
+    cart_count = int(cart_row['cnt'])
+
+    cur.execute("SELECT COUNT(*) as cnt FROM reviews WHERE user_id=%s", (uid,))
+    review_count = cur.fetchone()['cnt']
+
+    cur.execute("""
+        SELECT o.*, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) as item_count
+        FROM orders o WHERE o.customer_id=%s ORDER BY o.created_at DESC LIMIT 4
+    """, (uid,))
+    recent_orders = cur.fetchall()
+    for o in recent_orders:
+        o['created_at'] = str(o.get('created_at', ''))
+
+    cur.execute("""
+        SELECT p.id, p.name, p.price, p.image_url, p.stock, u.username as retailer_name
+        FROM wishlists w
+        JOIN products p ON p.id = w.product_id
+        LEFT JOIN users u ON u.id = p.retailer_id
+        WHERE w.user_id=%s AND p.is_active=1
+        ORDER BY w.added_at DESC LIMIT 4
+    """, (uid,))
+    wishlist_items = cur.fetchall()
+
+    cur.execute("""
+        SELECT p.id, p.name, p.price, p.image_url, u.username as retailer_name
+        FROM products p LEFT JOIN users u ON u.id = p.retailer_id
+        WHERE p.is_active=1 ORDER BY p.created_at DESC LIMIT 4
+    """)
+    recommendations = cur.fetchall()
+
+    cur.close(); db.close()
+    return render_template('customer_dashboard.html',
+        username=session.get('username', 'User'),
+        active_orders=active_orders,
+        wishlist_count=wishlist_count,
+        cart_total=cart_total,
+        cart_count=cart_count,
+        review_count=review_count,
+        recent_orders=recent_orders,
+        wishlist_items=wishlist_items,
+        recommendations=recommendations
+    )
+
+
 @app.route('/assets/highres.glb')
 def landing_model_asset():
     return send_from_directory(app.root_path, 'highres.glb', mimetype='model/gltf-binary')
@@ -1081,9 +1145,10 @@ def orders_page():
     """)
     recommendations = cur.fetchall()
 
+    cart_count = _cart_count(uid, db)
     cur.close(); db.close()
     return render_template('orders.html', orders=orders, username=session.get('username', ''),
-                           recommendations=recommendations)
+                           cart_count=cart_count, recommendations=recommendations)
 
 @app.route('/api/orders/statuses')
 @login_required

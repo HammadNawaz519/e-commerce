@@ -11,16 +11,16 @@
     :root {
       --charcoal:#1A1C23;
       --muted:#8E9BAE;
-      --sand:#E1D9BC;
-      --ivory:#F0F0DB;
+      --sand:#F4F5F0;
+      --ivory:#F4F5F0;
       --card:#FFFFFF;
-      --line:#EAEBE6;
+      --line:rgba(0,0,0,0.05);
       --ok:#1A1C23;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; }
     body {
       min-height: 100vh;
-      background: #F8F7F4;
+      background: #F4F5F0;
       color: var(--charcoal);
       padding: 24px;
     }
@@ -33,7 +33,7 @@
     }
     .card {
       background: var(--card);
-      border: 1px solid rgba(225,217,188,0.45);
+      border: 1px solid rgba(0,0,0,0.05);
       border-radius: 24px;
       box-shadow: 0 14px 36px rgba(0,0,0,0.06);
     }
@@ -356,7 +356,7 @@
     .field textarea:focus,
     .field select:focus {
       border-color: #d8cfaf;
-      box-shadow: 0 0 0 3px rgba(225,217,188,0.34);
+      box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
     }
     .save-btn {
       margin-top: 14px;

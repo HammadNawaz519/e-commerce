@@ -218,6 +218,49 @@
     gsap.from('.tab-nav', {delay: 2.6})
     gsap.from('.form-slider-wrapper', {delay: 2.7})
     gsap.from('.login__img', {y: 0, x: 100, delay: 3.2, ease: 'elastic.out(1,0.6)'})
+
+    /* ---- AJAX Form Submission ---- */
+    document.querySelectorAll('.login__form').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = 'Processing...';
+        submitBtn.disabled = true;
+
+        try {
+          const formData = new FormData(form);
+          const response = await fetch(form.action, {
+            method: form.method,
+            body: formData,
+            redirect: 'follow'
+          });
+
+          const finalUrl = new URL(response.url);
+
+          if (finalUrl.searchParams.has('error')) {
+            let errorDiv = form.querySelector('.form-error');
+            if (!errorDiv) {
+              errorDiv = document.createElement('div');
+              errorDiv.className = 'form-error';
+              form.insertBefore(errorDiv, form.querySelector('.role-section-label') || form.firstChild);
+            }
+            errorDiv.textContent = finalUrl.searchParams.get('error');
+            
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+          } else {
+            // Success, navigate to dashboard/intended URL
+            window.location.href = finalUrl.href;
+          }
+        } catch (err) {
+          console.error(err);
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+        }
+      });
+    });
   </script>
 </body>
 </html>

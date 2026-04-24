@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.86/build/spline-viewer.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
   <style>
     :root {
       --ink: #1a1c23;
@@ -326,13 +327,11 @@
     }
 
     .gola {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
+      width: 8px;
+      height: 8px;
       background: var(--ink);
-      border: 1px solid rgba(26, 28, 35, 0.2);
-      box-shadow: 0 2px 5px rgba(26, 28, 35, 0.14);
-      flex-shrink: 0;
+      border-radius: 1px;
+      opacity: 0.2;
     }
 
     .slider-container {
@@ -521,45 +520,29 @@
     }
 
     .contact-orbs {
-      margin-top: clamp(20px, 4vw, 34px);
+      margin-top: 60px;
       display: flex;
-      gap: 14px;
+      flex-direction: column;
+      gap: 52px;
       align-items: center;
+      width: 100%;
+      max-width: 500px;
+      margin-inline: auto;
     }
 
-    .contact-orb {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      filter: blur(0.6px);
-      opacity: 0.95;
-      animation: orbDrift 4.8s ease-in-out infinite, orbHue 6.2s linear infinite;
-      transform: translateZ(0);
-      will-change: transform, background, box-shadow;
+    .row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      gap: 10px;
     }
 
-    .contact-orb:nth-child(1) {
-      background: #d9d6ff;
-      box-shadow: 0 0 22px rgba(126, 115, 255, 0.35);
-      animation-delay: 0s;
-    }
-
-    .contact-orb:nth-child(2) {
-      background: #b7dcff;
-      box-shadow: 0 0 22px rgba(63, 151, 255, 0.35);
-      animation-delay: 0.45s;
-    }
-
-    .contact-orb:nth-child(3) {
-      background: #d3ffe9;
-      box-shadow: 0 0 22px rgba(63, 211, 159, 0.34);
-      animation-delay: 0.85s;
-    }
-
-    .contact-orb:nth-child(4) {
-      background: #ffe0d1;
-      box-shadow: 0 0 22px rgba(255, 139, 79, 0.33);
-      animation-delay: 1.25s;
+    .square {
+      width: 26px;
+      height: 26px;
+      background: #E0F7FA;
+      border-radius: 6px;
+      filter: blur(2.5px);
     }
 
     .contact-right {
@@ -1240,15 +1223,40 @@
 
     <section class="contact-stage" id="contact" aria-label="Contact section">
       <div class="contact-shell">
-        <aside class="contact-left">
-          <p class="contact-kicker">Shopy support</p>
-          <h2>We'd love to hear from you</h2>
-
-          <div class="contact-orbs" aria-hidden="true">
-            <span class="contact-orb"></span>
-            <span class="contact-orb"></span>
-            <span class="contact-orb"></span>
-            <span class="contact-orb"></span>
+        <aside class="contact-left" style="display: flex; flex-direction: column;">
+          <div style="margin-bottom: 0;">
+            <p class="contact-kicker">Shopy support</p>
+            <h2>We'd love to hear from you</h2>
+          </div>
+          
+          <div class="contact-orbs" aria-hidden="true" id="squareGrid">
+            <!-- Grid Top -->
+            <div class="grid-set grid-shadow">
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+            </div>
+            <!-- Grid Middle (Translation) -->
+            <div class="grid-set grid-translate">
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+            </div>
+            <!-- Grid Bottom -->
+            <div class="grid-set grid-shadow">
+              <div class="small justified row">
+                <div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div><div class="square"></div>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -1479,6 +1487,84 @@
       } else {
         showcaseStage.classList.add('is-active');
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      const blue = '#E0F7FA';
+      const purple = '#D8B4FE'; 
+      
+      const allSquares = document.querySelectorAll('.square');
+      allSquares.forEach(sq => {
+        sq.style.backgroundColor = blue;
+      });
+
+      function animateMiddle() {
+        const grid = [11, 4];
+        const from = Math.floor(Math.random() * 44);
+        anime({
+          targets: '.grid-translate .square',
+          translateX: [
+            { value: anime.stagger('-.75rem', { grid, from, axis: 'x' }), duration: 1000, easing: 'easeInOutQuad' },
+            { value: 0, duration: 1000, easing: 'easeInOutQuad' }
+          ],
+          translateY: [
+            { value: anime.stagger('-.75rem', { grid, from, axis: 'y' }), duration: 1000, easing: 'easeInOutQuad' },
+            { value: 0, duration: 1000, easing: 'easeInOutQuad' }
+          ],
+          backgroundColor: [
+            { value: purple, duration: 1000 },
+            { value: blue, duration: 1000 }
+          ],
+          opacity: [
+            { value: 0.5, duration: 1000, easing: 'easeInOutQuad' },
+            { value: 1, duration: 1000, easing: 'easeInOutQuad' }
+          ],
+          delay: anime.stagger(85, { grid, from }),
+          complete: animateMiddle
+        });
+      }
+
+      function animateShadow() {
+        anime({
+          targets: '.grid-shadow .square',
+          boxShadow: [
+            {
+              value: function(el, i) {
+                const total = 11;
+                const center = 5;
+                const dist = Math.abs((i % total) - center) / center; 
+                const v = 1 - (dist * 0.75);
+                const shadowColor = el.style.backgroundColor === purple ? purple : blue;
+                return `0 0 ${v * 40}px ${v * 30}px ${shadowColor}`;
+              },
+              duration: 1000,
+              easing: 'easeOutExpo'
+            },
+            {
+              value: function(el) {
+                const shadowColor = el.style.backgroundColor === purple ? purple : blue;
+                return `0 0 0px 0px ${shadowColor}`;
+              },
+              duration: 1000,
+              easing: 'easeInExpo'
+            }
+          ],
+          backgroundColor: [
+            { value: purple, duration: 1000 },
+            { value: blue, duration: 1000 }
+          ],
+          opacity: [
+            { value: 0.4, duration: 1000 },
+            { value: 1, duration: 1000 }
+          ],
+          delay: anime.stagger(150, { from: 'center' }),
+          complete: animateShadow
+        });
+      }
+
+      animateMiddle();
+      animateShadow();
     })();
   </script>
 </body>
