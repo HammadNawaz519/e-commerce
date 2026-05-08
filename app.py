@@ -1053,7 +1053,8 @@ def product_detail(product_id):
 
     return render_template('product.html', product=product, reviews=reviews,
                            related=related, in_wishlist=in_wishlist,
-                           cart_count=cart_count, username=session.get('username', ''))
+                           cart_count=cart_count, username=session.get('username', ''),
+                           current_user_id=session.get('user_id'))
 
 @app.route('/cart')
 @login_required
@@ -1442,6 +1443,24 @@ def add_review():
         'rating': rating
     })
 
+@app.route('/api/review/delete', methods=['POST'])
+@login_required
+def delete_review():
+    uid = session['user_id']
+    data = request.get_json() or {}
+    review_id = data.get('review_id')
+    if not review_id:
+        return jsonify({'error': 'Review ID required'}), 400
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("DELETE FROM reviews WHERE id=%s AND user_id=%s", (review_id, uid))
+    db.commit()
+    affected = cur.rowcount
+    cur.close(); db.close()
+    if affected == 0:
+        return jsonify({'error': 'Review not found or unauthorized'}), 404
+    return jsonify({'success': True})
+
 # ================================================================
 # RETAILER ROUTES
 # ================================================================
@@ -1771,6 +1790,30 @@ def _insert_ai_chat_row(cur, user_id: int, role: str, sender: str, message: str)
         else:
             raise
 
+
+def _phase2_payload_needs_fallback(payload) -> bool:
+    """Detect when the text-to-SQL pipeline returned a degraded response."""
+    if not isinstance(payload, dict):
+        return True
+
+    query_ran = str(payload.get('query_ran') or '').strip().lower()
+    db_output = str(payload.get('db_output') or '').strip().lower()
+    answer = str(payload.get('answer') or '').strip().lower()
+
+    if not answer:
+        return True
+    if query_ran in {'', '(not generated)'}:
+        return True
+    if db_output.startswith('pipeline error:'):
+        return True
+
+    degraded_markers = [
+        'could not complete the sql pipeline',
+        'something went wrong while processing your question',
+        'please rephrase your question in plain business terms',
+    ]
+    return any(marker in answer for marker in degraded_markers)
+
 @app.route('/api/ai/chat', methods=['POST'])
 @login_required
 def ai_chat():
@@ -1778,6 +1821,8 @@ def ai_chat():
     question = (data.get('message') or '').strip()
     if not question:
         return jsonify({'error': 'No message provided'}), 400
+
+    print(f"[Sage AI] New request: {question[:50]}...")
 
     # ── LAYER 2: Keyword Blocklist — scan input BEFORE it reaches the LLM ──
     input_safe, input_msg = validate_user_input(question)
@@ -1803,6 +1848,40 @@ def ai_chat():
         # against the read-only database, then synthesizes a plain-English answer.
         # It returns {'query_ran', 'db_output', 'answer'} — same keys as before.
         payload = ask_sage_langchain(question, role, user_id)
+
+        # Reliability fallback: if SQL pipeline is degraded, respond from context mode.
+        if _phase2_payload_needs_fallback(payload):
+            fallback_db = None
+            try:
+                try:
+                    fallback_db = get_readonly_db()
+                except Exception:
+                    fallback_db = get_db()
+
+                fallback_payload = ask_sage_with_context(question, role, user_id, fallback_db)
+                if isinstance(fallback_payload, dict):
+                    payload = {
+                        'answer': (fallback_payload.get('answer') or payload.get('answer') or '').strip(),
+                        'query_ran': (
+                            payload.get('query_ran')
+                            or fallback_payload.get('query_ran')
+                            or f'User Question: {question}\nMode: fallback context responder'
+                        ),
+                        'db_output': (
+                            fallback_payload.get('db_output')
+                            or payload.get('db_output')
+                            or 'Fallback context mode used.'
+                        ),
+                    }
+            except Exception as fallback_exc:
+                app.logger.warning(f'ai_chat fallback failed for user {user_id}: {fallback_exc}')
+            finally:
+                if fallback_db:
+                    try:
+                        fallback_db.close()
+                    except Exception:
+                        pass
+
         answer    = (payload.get('answer') or '').strip() or 'No response.'
         query_ran = payload.get('query_ran') or f'User Question: {question}'
         db_output = payload.get('db_output') or 'No database output available.'

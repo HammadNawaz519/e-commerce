@@ -416,10 +416,10 @@ def _prepare_db_output(db_context: str, max_chars: int = 5000) -> str:
 # ─────────────────────────────────────────────
 AI_MODELS = [
     _os.getenv("OPENROUTER_MODEL", "").strip(),
-    "openai/gpt-oss-120b:free",
-    "openai/gpt-oss-20b:free",
+    "google/gemini-2.0-flash-exp:free",
     "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-3-12b-it:free",
+    "openrouter/free",
+    "openai/gpt-oss-120b:free",
 ]
 
 
@@ -463,14 +463,12 @@ def call_ai(messages: list, model: str = None) -> str:
                     "max_tokens":  600,
                     "temperature": 0.4,
                 },
-                timeout=30,
+                timeout=15,
             )
 
-            if resp.status_code == 402:
-                return "AI service requires credits. Please top up your OpenRouter account."
-
-            # Free model routes can be temporarily unavailable or rate-limited.
-            if resp.status_code in (404, 429):
+            # Free model routes can be temporarily unavailable, rate-limited, or experience server issues.
+            # 402 indicates credit limits / payment required; we failover to free models in this case.
+            if resp.status_code in (402, 404, 429, 500, 502, 503, 504):
                 last_error = f"{target_model} -> HTTP {resp.status_code}"
                 continue
 

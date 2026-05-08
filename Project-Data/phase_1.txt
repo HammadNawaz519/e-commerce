@@ -1,4 +1,4 @@
-﻿================================================================================
+================================================================================
   PHASE 1 — DATABASE ENGINEERING (COMPLETE)
   Project: Shopy — E-Commerce Conversational Database Assistant
   Domain:  E-Commerce
@@ -611,7 +611,7 @@ Expected output:
   payments        12
   shipments       10
 
-Total: 190 rows across 15 tables.
+Total: 204 rows across 15 tables.
 
 
 ================================================================================

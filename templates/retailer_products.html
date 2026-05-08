@@ -384,35 +384,42 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(26, 28, 35, 0.4);
-      backdrop-filter: blur(4px);
+      background: rgba(26, 28, 35, 0);
+      backdrop-filter: blur(0px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      z-index: 100000;
       opacity: 0;
       pointer-events: none;
-      transition: 0.3s ease;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .modal-overlay.active {
+    .modal-overlay.show {
       opacity: 1;
+      background: rgba(26, 28, 35, 0.5);
+      backdrop-filter: blur(8px);
       pointer-events: auto;
     }
 
-    .modal-card {
+    .modal-box {
       background: #fff;
-      width: 100%;
-      max-width: 540px;
-      border-radius: 28px;
-      padding: 32px;
-      transform: translateY(20px);
-      transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+      width: calc(100% - 40px);
+      max-width: 500px;
+      max-height: 85vh;
+      overflow-y: auto;
+      border-radius: 24px;
+      padding: 28px;
+      transform: translateY(60px) scale(0.9) rotateX(-10deg);
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 24px 60px rgba(0, 0, 0, 0.1);
+      perspective: 1000px;
     }
 
     .modal-overlay.show .modal-box {
-      transform: translateY(0) scale(1);
+      transform: translateY(0) scale(1) rotateX(0deg);
+      opacity: 1;
     }
 
     .modal-title {
@@ -446,8 +453,8 @@
     .form-group textarea,
     .form-group select {
       width: 100%;
-      padding: 14px 18px;
-      border-radius: 14px;
+      padding: 12px 16px;
+      border-radius: 12px;
       border: 1px solid var(--border);
       background: #F9FAFB;
       font-size: 14px;
@@ -853,6 +860,7 @@
       }
     }
     function openAddModal() {
+      if (window.closeSage) window.closeSage();
       document.getElementById('modalTitle').textContent = 'Add New Product';
       document.getElementById('editProductId').value = '';
       document.getElementById('productForm').reset();
@@ -861,6 +869,7 @@
       document.getElementById('productModal').classList.add('show');
     }
     function openEditModal(id, name, desc, price, origPrice, stock, catId, isActive, imgUrl) {
+      if (window.closeSage) window.closeSage();
       document.getElementById('modalTitle').textContent = 'Edit Product';
       document.getElementById('editProductId').value = id;
       document.getElementById('prodName').value = name;

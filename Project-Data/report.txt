@@ -38,7 +38,7 @@ SCHEMA SUMMARY — 15 TABLES
   payments            12      Payment transaction records
   shipments           10      Courier and tracking records
   ──────────────────────────────────────────────────────────────────────
-  TOTAL              190 rows across 15 tables
+  TOTAL              204 rows across 15 tables
 
 MANY-TO-MANY RELATIONSHIPS RESOLVED VIA JUNCTION TABLES
 ─────────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ PRIMARY KEY DECLARATIONS
 FULL SQL FILE
 ─────────────
   All CREATE TABLE statements and INSERT statements are contained in:
-    shopy.sql  (45 899 bytes, 675 lines)
+    shopy.sql  (44 291 bytes, 656 lines)
 
   The schema is also auto-created at runtime by init_db() in app.py
   (lines 204–420) using CREATE TABLE IF NOT EXISTS, ensuring the

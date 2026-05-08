@@ -537,8 +537,8 @@
         <div style="text-align:right;">
           <span class="order-status status-{{ status }}">{{ status.title() if status else 'Pending' }}</span>
           <div class="payment-badges">
-            <span class="pay-badge">{{ (order.payment_method or 'cod')|replace('_',' ') }}</span>
-            <span class="pay-badge">{{ order.payment_status or 'pending' }}</span>
+            
+            
           </div>
           {% if order.payment_ref %}<div style="font-size:11px; color:var(--muted); margin-top:6px;">Ref: {{
             order.payment_ref }}</div>{% endif %}

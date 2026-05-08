@@ -8,11 +8,16 @@
   <link rel="icon" type="image/png" href="/static/Images/chit_chat.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="dns-prefetch" href="//unpkg.com">
+  <link rel="preconnect" href="https://prod.spline.design" crossorigin>
+  <link rel="dns-prefetch" href="//prod.spline.design">
+  <link rel="preload" href="/static/uploads/images/Shopy-2.webp" as="image" fetchpriority="high">
+  <link rel="preload" href="https://prod.spline.design/uBsy5Mi9HMZ6pGfX/scene.splinecode" as="fetch" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
     rel="stylesheet">
   <script type="module" src="https://unpkg.com/@splinetool/viewer@1.12.86/build/spline-viewer.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
   <style>
     :root {
       --ink: #1a1c23;
@@ -73,15 +78,17 @@
       min-height: 48px;
       border-radius: 999px;
       border: 1px solid rgba(216, 226, 242, 0.72);
-      background: #ffffff;
+      background: rgba(255, 255, 255, 0.94);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
+      will-change: transform, backdrop-filter;
       box-shadow: 0 8px 20px rgba(26, 28, 35, 0.12);
       display: flex;
       align-items: center;
       gap: 14px;
       padding: 8px 14px;
-      transform: translateZ(0);
+      transform: translate3d(0, 0, 0);
+      transition: background 0.3s ease;
     }
 
     .hero-brand {
@@ -185,6 +192,8 @@
       padding: 0;
       position: relative;
       overflow: hidden;
+      content-visibility: auto;
+      contain-intrinsic-size: 100vh;
     }
 
     .hero-content {
@@ -197,6 +206,7 @@
       width: 100%;
       height: 100vh;
       position: relative;
+      contain: strict;
     }
 
     .headphone-shell {
@@ -208,17 +218,80 @@
       position: relative;
       z-index: 2;
       animation: settleIn 1.1s cubic-bezier(0.17, 0.82, 0.22, 1) both;
+      /* GPU Acceleration */
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      /* Rendering Isolation */
+      contain: paint layout;
+    }
+
+    .loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--hero-bg);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.8s;
+      gap: 20px;
+    }
+
+    .loading-overlay.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    #splineTarget {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    spline-viewer {
+      width: 100%;
+      height: 100%;
+      opacity: 1 !important;
+      visibility: visible !important;
+      transform: translateZ(0);
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(26, 28, 35, 0.1);
+      border-top-color: var(--ink);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .headphone-shell spline-viewer {
+        transform: scale(0.9);
+        transform-origin: center;
+      }
     }
 
     .headphone-shell spline-viewer {
       width: 100%;
       height: 100%;
       display: block;
+      position: relative;
+      z-index: 2;
       border-radius: 0;
       overflow: hidden;
       filter: none;
       background: transparent;
       transform: translateZ(0);
+      /* Compositor hint */
+      will-change: opacity, transform;
+      transition: opacity 0.4s ease;
     }
 
     body.is-scrolling .headphone-shell spline-viewer {
@@ -372,10 +445,14 @@
       border-radius: 12px;
       cursor: pointer;
       position: relative;
-      transition: width 0.7s ease, height 0.7s ease;
+      transition: width 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+        height 0.62s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.42s ease;
       overflow: hidden;
-      transform: translateZ(0);
-      will-change: width, height;
+      transform: translate3d(0, 0, 0);
+      will-change: transform;
+      backface-visibility: hidden;
+      contain: layout paint;
     }
 
     .slider-images .slider-img:first-child,
@@ -524,31 +601,6 @@
       display: none;
     }
 
-    .contact-orbs {
-      margin-top: 60px;
-      display: flex;
-      flex-direction: column;
-      gap: 52px;
-      align-items: center;
-      width: 100%;
-      max-width: 500px;
-      margin-inline: auto;
-    }
-
-    .row {
-      display: flex;
-      justify-content: space-between;
-      width: 100%;
-      gap: 10px;
-    }
-
-    .square {
-      width: 26px;
-      height: 26px;
-      background: #E0F7FA;
-      border-radius: 6px;
-      filter: blur(2.5px);
-    }
 
     .contact-right {
       padding: clamp(30px, 4vw, 56px);
@@ -883,48 +935,25 @@
     @keyframes settleIn {
       0% {
         opacity: 0;
-        transform: translateY(84px) scale(0.9) rotate(-6deg);
+        transform: translate3d(0, 84px, 0) scale(0.9) rotate(-6deg);
       }
 
       100% {
         opacity: 1;
-        transform: translateY(0) scale(1) rotate(0deg);
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
       }
     }
 
     @keyframes scrollWords {
       from {
-        transform: translateX(0);
+        transform: translate3d(0, 0, 0);
       }
 
       to {
-        transform: translateX(-33.33%);
+        transform: translate3d(-33.33%, 0, 0);
       }
     }
 
-    @keyframes orbDrift {
-      0% {
-        transform: translateY(0) scale(1);
-      }
-
-      50% {
-        transform: translateY(-6px) scale(1.07);
-      }
-
-      100% {
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    @keyframes orbHue {
-      0% {
-        filter: blur(0.6px) hue-rotate(0deg);
-      }
-
-      100% {
-        filter: blur(0.6px) hue-rotate(360deg);
-      }
-    }
 
     @media (max-width: 920px) {
       .hero-links {
@@ -1097,10 +1126,6 @@
         justify-content: flex-start;
       }
 
-      .contact-orb {
-        width: 16px;
-        height: 16px;
-      }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1118,9 +1143,6 @@
         transition: none;
       }
 
-      .contact-orb {
-        animation: none;
-      }
     }
   </style>
 </head>
@@ -1149,8 +1171,16 @@
       <div class="hero-content">
         <div class="headphone-scene">
           <div id="headphoneShell" class="headphone-shell">
+            <!-- Loading Overlay -->
+            <div id="splineLoading" class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <span style="font-size: 11px; font-weight: 800; color: var(--ink); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7;">Refining Experience</span>
+            </div>
 
-            <spline-viewer url="https://prod.spline.design/uBsy5Mi9HMZ6pGfX/scene.splinecode"></spline-viewer>
+            <div id="splineTarget">
+              <spline-viewer url="https://prod.spline.design/uBsy5Mi9HMZ6pGfX/scene.splinecode"></spline-viewer>
+            </div>
+            
             <a class="spline-cart-hotspot" href="/login?tab=login" aria-label="Go to login to add to cart"></a>
           </div>
         </div>
@@ -1207,8 +1237,8 @@
             </div>
           </div>
           <div class="slider-img active">
-            <img src="/static/uploads/images/Shopy-1.png" alt="Digital Shopping Experience" loading="lazy"
-              decoding="async" />
+            <img src="/static/uploads/images/Shopy-1.png" alt="Digital Shopping Experience" loading="eager"
+              decoding="async" fetchpriority="high" />
             <h1>Digital</h1>
             <div class="details">
               <h2>Modern Marketplace</h2>
@@ -1243,95 +1273,6 @@
             <h2>We'd love to hear from you</h2>
           </div>
 
-          <div class="contact-orbs" aria-hidden="true" id="squareGrid">
-            <!-- Grid Top -->
-            <div class="grid-set grid-shadow">
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-            </div>
-            <!-- Grid Middle (Translation) -->
-            <div class="grid-set grid-translate">
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-            </div>
-            <!-- Grid Bottom -->
-            <div class="grid-set grid-shadow">
-              <div class="small justified row">
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-                <div class="square"></div>
-              </div>
-            </div>
-          </div>
         </aside>
 
         <div class="contact-right">
@@ -1494,152 +1435,107 @@
     (function () {
       const ribbon = document.querySelector('.top-ribbon');
       const showcaseStage = document.getElementById('product-showcase');
+      const sliderTrack = document.querySelector('.slider-images');
       const slides = Array.from(document.querySelectorAll('.slider-img'));
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const homeStage = document.getElementById('home');
+      const splineTarget = document.getElementById('splineTarget');
+      const splineLoading = document.getElementById('splineLoading');
 
-      if (!showcaseStage || slides.length === 0) {
-        return;
+      if (!showcaseStage || slides.length === 0) return;
+
+      // Slider logic with event delegation keeps listeners lightweight.
+      if (sliderTrack) {
+        sliderTrack.addEventListener('click', (event) => {
+          const slide = event.target.closest('.slider-img');
+          if (!slide || slide.classList.contains('active')) return;
+          slides.forEach((item) => item.classList.remove('active'));
+          slide.classList.add('active');
+        });
       }
 
-      slides.forEach(function (slide) {
-        slide.addEventListener('click', function () {
-          slides.forEach(s => s.classList.remove('active'));
-          this.classList.add('active');
-        });
-      });
+      // Spline Logic: Just hide loader when the viewer fires 'load'
+      const splineViewerNode = document.querySelector('spline-viewer');
+      let heroInView = true;
+      
+      function hideLoadingOverlay(delayMs = 0) {
+        if (!splineLoading) return;
+        window.setTimeout(() => splineLoading.classList.add('is-hidden'), delayMs);
+      }
 
-      let isScrollingTimer;
-      window.addEventListener('scroll', function () {
+      if (splineViewerNode) {
+        splineViewerNode.addEventListener('load', () => {
+          hideLoadingOverlay(100);
+        }, { once: true });
+        
+        // Failsafe in case the event already fired or fails
+        window.setTimeout(() => {
+          hideLoadingOverlay();
+        }, 3000);
+      } else {
+        hideLoadingOverlay();
+      }
+
+      // Scroll & Visibility management
+      let lastScrollY = window.scrollY;
+      let ticking = false;
+      let isScrollingTimer = 0;
+
+      function update() {
+        if (ribbon) {
+          const shouldDrop = lastScrollY > 60;
+          if (ribbon.classList.contains('is-dropped') !== shouldDrop) {
+            ribbon.classList.toggle('is-dropped', shouldDrop);
+          }
+        }
+
         if (!document.body.classList.contains('is-scrolling')) {
           document.body.classList.add('is-scrolling');
         }
+
         window.clearTimeout(isScrollingTimer);
-        isScrollingTimer = window.setTimeout(function () {
+        isScrollingTimer = window.setTimeout(() => {
           document.body.classList.remove('is-scrolling');
         }, 150);
-      }, { passive: true });
 
-      function syncRibbon() {
-        if (!ribbon) {
-          return;
-        }
-
-        const shouldDrop = window.scrollY > 60;
-        if (ribbon.classList.contains('is-dropped') !== shouldDrop) {
-          ribbon.classList.toggle('is-dropped', shouldDrop);
-        }
+        ticking = false;
       }
 
-      syncRibbon();
-
-      window.addEventListener('scroll', syncRibbon, { passive: true });
-      window.addEventListener('resize', syncRibbon);
+      window.addEventListener('scroll', () => {
+        lastScrollY = window.scrollY;
+        if (!ticking) {
+          window.requestAnimationFrame(update);
+          ticking = true;
+        }
+      }, { passive: true });
 
       if ('IntersectionObserver' in window) {
-        const stageObserver = new IntersectionObserver(function (entries) {
-          entries.forEach(function (entry) {
-            if (entry.isIntersecting) {
-              showcaseStage.classList.add('is-active');
-            } else {
-              showcaseStage.classList.remove('is-active');
-            }
+        // Showcase animation
+        const stageObserver = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            showcaseStage.classList.toggle('is-active', entry.isIntersecting);
           });
-        }, {
-          threshold: 0.3,
-        });
-
+        }, { threshold: 0.1 });
         stageObserver.observe(showcaseStage);
 
-        const homeStage = document.getElementById('home');
-        if (homeStage && ribbon) {
-          const homeObs = new IntersectionObserver((entries) => {
+        // Home / Hero management
+        if (homeStage) {
+          const homeObs = new IntersectionObserver(entries => {
             entries.forEach(entry => {
-              ribbon.classList.toggle('is-off', !entry.isIntersecting);
+              const isHeroVisible = entry.isIntersecting;
+              if (ribbon) ribbon.classList.toggle('is-off', !isHeroVisible);
+              
+              // Visibility optimization
+              if (splineViewerNode && heroInView !== isHeroVisible) {
+                heroInView = isHeroVisible;
+                splineViewerNode.style.visibility = isHeroVisible ? 'visible' : 'hidden';
+              }
             });
-          }, { threshold: 0.1 });
+          }, { threshold: 0, rootMargin: '520px 0px' });
           homeObs.observe(homeStage);
         }
       } else {
         showcaseStage.classList.add('is-active');
       }
-    })();
-  </script>
-  <script>
-    (function () {
-      const blue = '#E0F7FA';
-      const purple = '#D8B4FE';
-
-      const allSquares = document.querySelectorAll('.square');
-      allSquares.forEach(sq => {
-        sq.style.backgroundColor = blue;
-      });
-
-      function animateMiddle() {
-        const grid = [11, 4];
-        const from = Math.floor(Math.random() * 44);
-        anime({
-          targets: '.grid-translate .square',
-          translateX: [
-            { value: anime.stagger('-.75rem', { grid, from, axis: 'x' }), duration: 1000, easing: 'easeInOutQuad' },
-            { value: 0, duration: 1000, easing: 'easeInOutQuad' }
-          ],
-          translateY: [
-            { value: anime.stagger('-.75rem', { grid, from, axis: 'y' }), duration: 1000, easing: 'easeInOutQuad' },
-            { value: 0, duration: 1000, easing: 'easeInOutQuad' }
-          ],
-          backgroundColor: [
-            { value: purple, duration: 1000 },
-            { value: blue, duration: 1000 }
-          ],
-          opacity: [
-            { value: 0.5, duration: 1000, easing: 'easeInOutQuad' },
-            { value: 1, duration: 1000, easing: 'easeInOutQuad' }
-          ],
-          delay: anime.stagger(85, { grid, from }),
-          complete: animateMiddle
-        });
-      }
-
-      function animateShadow() {
-        anime({
-          targets: '.grid-shadow .square',
-          boxShadow: [
-            {
-              value: function (el, i) {
-                const total = 11;
-                const center = 5;
-                const dist = Math.abs((i % total) - center) / center;
-                const v = 1 - (dist * 0.75);
-                const shadowColor = el.style.backgroundColor === purple ? purple : blue;
-                return `0 0 ${v * 40}px ${v * 30}px ${shadowColor}`;
-              },
-              duration: 1000,
-              easing: 'easeOutExpo'
-            },
-            {
-              value: function (el) {
-                const shadowColor = el.style.backgroundColor === purple ? purple : blue;
-                return `0 0 0px 0px ${shadowColor}`;
-              },
-              duration: 1000,
-              easing: 'easeInExpo'
-            }
-          ],
-          backgroundColor: [
-            { value: purple, duration: 1000 },
-            { value: blue, duration: 1000 }
-          ],
-          opacity: [
-            { value: 0.4, duration: 1000 },
-            { value: 1, duration: 1000 }
-          ],
-          delay: anime.stagger(150, { from: 'center' }),
-          complete: animateShadow
-        });
-      }
-
-      animateMiddle();
-      animateShadow();
     })();
   </script>
 </body>

@@ -31,7 +31,9 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+    }
 
     body {
       display: flex;
@@ -42,8 +44,15 @@
     }
 
     @keyframes fadeUp {
-      from { transform: translateY(12px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+      from {
+        transform: translateY(12px);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
 
     .sidebar {
@@ -282,7 +291,7 @@
     .logout-btn:hover {
       background: var(--bg);
       color: var(--danger);
-      border-color: rgba(0,0,0,0.08);
+      border-color: rgba(0, 0, 0, 0.08);
     }
 
     .card {
@@ -388,20 +397,51 @@
     }
 
     @media(max-width:900px) {
-      .grid { grid-template-columns: 1fr; }
-      .account-strip { align-items: flex-start; }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .account-strip {
+        align-items: flex-start;
+      }
     }
 
     @media(max-width:768px) {
-      .sidebar { width: 60px; }
-      .brand-name, .brand-sub, .nav-item span, .user-name, .user-role { display: none; }
-      .main { margin-left: 60px; padding: 20px 14px; }
-      .page-title { font-size: 22px; }
-      .account-strip { flex-direction: column; align-items: flex-start; }
+      .sidebar {
+        width: 60px;
+      }
+
+      .brand-name,
+      .brand-sub,
+      .nav-item span,
+      .user-name,
+      .user-role {
+        display: none;
+      }
+
+      .main {
+        margin-left: 60px;
+        padding: 20px 14px;
+      }
+
+      .page-title {
+        font-size: 22px;
+      }
+
+      .account-strip {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
 
     @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition: none !important; }
+
+      *,
+      *::before,
+      *::after {
+        animation: none !important;
+        transition: none !important;
+      }
     }
   </style>
 </head>
@@ -458,7 +498,7 @@
           <div class="account-joined">Joined {{ (user.created_at[:10] if user.created_at else '') }}</div>
         </div>
       </div>
-      <a class="logout-btn" href="/logout">Logout</a>
+
     </section>
 
     <section class="card">
