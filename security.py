@@ -99,6 +99,30 @@ _PROMPT_INJECTION_PHRASES = [
     'jailbreak',
     'dan mode',
     'do anything now',
+    'list all passwords',
+    'list passwords',
+    'show all passwords',
+    'dump passwords',
+    'dump credentials',
+    'dump the database',
+    'dump database',
+    'all user data',
+    'exfiltrate',
+]
+
+# Standalone sensitive column names that should never be queried directly
+_SENSITIVE_COLUMN_TERMS = [
+    'password',
+    'passwords',
+    'credentials',
+    'api key',
+    'api_key',
+    'secret key',
+    'secret_key',
+    'auth token',
+    'auth_token',
+    'private key',
+    'private_key',
 ]
 
 
@@ -132,24 +156,29 @@ def validate_user_input(user_input: str) -> tuple[bool, str]:
                 # Check if it appears with SQL-like syntax (e.g., followed by table name patterns)
                 sql_pattern = r'\b' + _re.escape(keyword) + r'\s+(TABLE|FROM|INTO|SET|DATABASE|INDEX|VIEW|USER|TRIGGER|PROCEDURE)\b'
                 if _re.search(sql_pattern, normalized):
-                    return False, f"🛡️ Security Alert: Your input contains a blocked SQL keyword ('{keyword}'). For security, only read-only queries are allowed."
+                    return False, f"[BLOCKED] Security Alert: Your input contains a blocked SQL keyword ('{keyword}'). For security, only read-only queries are allowed."
             else:
-                return False, f"🛡️ Security Alert: Your input contains a blocked SQL keyword ('{keyword}'). For security, only read-only queries are allowed."
+                return False, f"[BLOCKED] Security Alert: Your input contains a blocked SQL keyword ('{keyword}'). For security, only read-only queries are allowed."
 
     # Check SQL injection syntax
     for pattern in _SQL_INJECTION_SYNTAX:
         if pattern.upper() in normalized:
-            return False, f"🛡️ Security Alert: Your input contains suspicious SQL syntax ('{pattern}'). This pattern has been blocked for your protection."
+            return False, f"[BLOCKED] Security Alert: Your input contains suspicious SQL syntax ('{pattern}'). This pattern has been blocked for your protection."
 
     # Check prompt injection phrases
     for phrase in _PROMPT_INJECTION_PHRASES:
         if phrase.lower() in lower_input:
-            return False, f"🛡️ Security Alert: Your input contains a prompt injection pattern. I cannot comply with instructions that attempt to override my operating rules."
+            return False, f"[BLOCKED] Security Alert: Your input contains a prompt injection pattern. I cannot comply with instructions that attempt to override my operating rules."
+
+    # Check for requests to access sensitive columns directly
+    for term in _SENSITIVE_COLUMN_TERMS:
+        if term in lower_input:
+            return False, f"[BLOCKED] Security Alert: Requests involving sensitive data fields ('{term}') are not permitted."
 
     # Check for excessive special characters (potential obfuscated injection)
     special_char_count = sum(1 for c in user_input if c in "';\"\\`{}|")
     if special_char_count > 5:
-        return False, "🛡️ Security Alert: Your input contains too many special characters. Please rephrase your question in plain English."
+        return False, "[BLOCKED] Security Alert: Your input contains too many special characters. Please rephrase your question in plain English."
 
     return True, "Input is safe."
 
@@ -185,8 +214,12 @@ def validate_ai_output(ai_response: str) -> tuple[bool, str]:
         r'password\s*[:=]\s*\S+',
         r'api[_\s]*key\s*[:=]\s*\S+',
         r'secret[_\s]*key\s*[:=]\s*\S+',
-        r'sk-[a-zA-Z0-9]{20,}',          # OpenRouter/OpenAI key pattern
-        r'Bearer\s+[a-zA-Z0-9\-._~+/]+=*',  # Bearer token pattern
+        r'sk-[a-zA-Z0-9\-]{20,}',                       # OpenRouter/OpenAI key pattern (allows hyphens)
+        r'Bearer\s+[a-zA-Z0-9\-._~+/]+=*',              # Bearer token pattern
+        r'scrypt:[0-9]+:[0-9]+:[0-9]+\$[A-Za-z0-9+/]+', # scrypt hash (Werkzeug)
+        r'pbkdf2:[a-zA-Z0-9]+:[0-9]+\$[A-Za-z0-9+/]+',  # pbkdf2 hash
+        r'\$2[aby]\$[0-9]+\$[A-Za-z0-9./]{53}',          # bcrypt hash
+        r'sha256\$[A-Za-z0-9]+\$[A-Fa-f0-9]{64}',        # Django SHA256 hash
     ]
     for pattern in credential_patterns:
         if _re.search(pattern, ai_response, _re.IGNORECASE):
@@ -231,11 +264,10 @@ def get_security_status() -> dict:
             'location': 'security.py → validate_user_input()',
         },
         'layer_3_least_privilege': {
-            'status': 'RECOMMENDED',
-            'description': 'Database connection should use a read-only MySQL user with only SELECT privileges. '
-                           'Create user: CREATE USER "readonly_app"@"localhost" IDENTIFIED BY "<password>"; '
-                           'GRANT SELECT ON shopy.* TO "readonly_app"@"localhost";',
-            'location': '.env → DB_USER / DB_PASSWORD',
+            'status': 'ACTIVE',
+            'description': 'Database connections for AI queries use a read-only MySQL user (READ_DB_USER) with only SELECT privileges. '
+                           'This prevents the AI from executing destructive commands even if an injection occurs.',
+            'location': 'app.py → get_readonly_db() and .env → READ_DB_USER / READ_DB_PASSWORD',
         },
         'layer_4_output_validation': {
             'status': 'ACTIVE',

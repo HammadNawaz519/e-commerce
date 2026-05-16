@@ -206,7 +206,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 
 
 ) ENGINE=InnoDB;
--- Added for Phase-1 completeness in e-commerce domain
+
 CREATE TABLE IF NOT EXISTS payments (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     order_id        INT           NOT NULL,
@@ -221,7 +221,7 @@ CREATE TABLE IF NOT EXISTS payments (
 
 
 ) ENGINE=InnoDB;
--- Added for Phase-1 completeness in e-commerce domain
+
 CREATE TABLE IF NOT EXISTS shipments (
     id                INT AUTO_INCREMENT PRIMARY KEY,
     order_id          INT           NOT NULL,
