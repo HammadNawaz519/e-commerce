@@ -1,471 +1,386 @@
 """
-langchain_pipeline.py  —  Shopy True Text-to-SQL Pipeline (Phase 2)
-======================================================================
-Implements a strict 2-step LangChain flow:
+langchain_pipeline.py  —  Shopy Direct SQL Pipeline (Phase 2 Optimized)
+=========================================================================
+Zero LangChain. Zero SQLAlchemy. Pure native mysql.connector.
 
-  1. Generate SQL from natural language using an LLM and schema context.
-  2. Validate SQL BEFORE execution (must be a single SELECT).
-  3. Execute against read-only credentials.
-  4. Synthesize plain-English response.
-
-This keeps UI contracts unchanged and satisfies security ordering:
-validation happens before any database execution.
+Flow:
+  1. Quick local answer check (instant).
+  2. Build schema from hardcoded table definitions (no DB round-trip).
+  3. Ask LLM to generate a SELECT query.
+  4. Validate SELECT-only (security guard).
+  5. Execute directly via mysql.connector on read-only credentials.
+  6. Ask LLM to synthesize a plain-English answer.
 """
 
 import os
 import re
 import threading
 import time
-from urllib.parse import quote_plus
 
+import mysql.connector
+import requests
 from dotenv import load_dotenv
-from langchain_community.utilities import SQLDatabase
-from langchain_openai import ChatOpenAI
 
 load_dotenv(override=True)
 
+# ── Quality / token budgets ───────────────────────────────────────────────────
+_SAGE_QUALITY = (os.getenv("SAGE_QUALITY") or "fast").strip().lower()
+if _SAGE_QUALITY not in ("fast", "medium"):
+    _SAGE_QUALITY = "fast"
 
-# ── Model failover list (same priority order as prompts.py) ──────────────────
-_FALLBACK_MODELS = [
+# ── Model lists ───────────────────────────────────────────────────────────────
+_GROQ_MODELS_FAST   = ["llama-3.1-8b-instant", "llama-3.3-70b-specdec", "gemma2-9b-it"]
+_GROQ_MODELS_MEDIUM = ["llama-3.3-70b-specdec", "llama-3.1-70b-versatile", "llama-3.1-8b-instant"]
+_GROK_MODELS        = ["grok-2-1212", "grok-beta"]
+_OPENROUTER_MODELS  = [
     (os.getenv("OPENROUTER_MODEL") or "").strip(),
-    "google/gemini-2.0-flash-exp:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/free",
     "openai/gpt-oss-120b:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
 ]
 
-_INCLUDED_TABLES = [
-    "users", "categories", "products", "product_images",
-    "discount_codes", "addresses", "orders", "order_items",
-    "cart", "wishlists", "reviews", "ai_chat_history",
-    "notifications", "payments", "shipments",
-]
+# ── Hardcoded schema (no DB introspection needed at query time) ───────────────
+_HARDCODED_SCHEMA = """
+Table: users          — id, username, email, role, created_at
+Table: categories     — id, name, description
+Table: products       — id, name, price, original_price, stock, is_active, retailer_id, category_id, created_at
+Table: product_images — id, product_id, image_url, is_primary
+Table: orders         — id, customer_id, status, total_amount, created_at
+Table: order_items    — id, order_id, product_id, retailer_id, quantity, unit_price
+Table: cart           — id, user_id, product_id, quantity
+Table: wishlists      — id, user_id, product_id
+Table: reviews        — id, product_id, user_id, rating, comment, created_at
+Table: addresses      — id, user_id, street, city, country
+Table: payments       — id, order_id, amount, status, method, created_at
+Table: shipments      — id, order_id, status, tracking_number, updated_at
+Table: discount_codes — id, code, discount_percent, is_active
+Table: notifications  — id, user_id, message, is_read, created_at
+Table: ai_chat_history— id, user_id, role_type, question, answer, created_at
+
+Key relationships:
+- orders.customer_id  → users.id
+- order_items.order_id → orders.id  |  order_items.product_id → products.id
+- products.retailer_id → users.id   |  products.category_id  → categories.id
+- reviews.product_id  → products.id |  reviews.user_id        → users.id
+- cart / wishlists / addresses / notifications  use  user_id → users.id
+
+Schema Rules:
+- 'products' has NO 'views' column. Use order_items COUNT for popularity.
+- Use orders.total_amount for order value.
+- Retailer-specific queries: filter products/order_items by retailer_id.
+""".strip()
 
 _SQL_RULES = (
     "You are a read-only SQL assistant for MySQL. "
-    "Return exactly one SQL query and nothing else. "
-    "The query must be a single SELECT statement. "
-    "Do not use markdown, comments, explanations, or multiple statements.\n"
-    "Crucial Schema Notes:\n"
-    "- The 'orders' table uses 'customer_id' to refer to a user.\n"
-    "- Tables like 'cart', 'wishlists', 'addresses', 'reviews', and 'ai_chat_history' use 'user_id'.\n"
-    "- Use 'orders.total_amount' for order pricing.\n"
-    "- The 'products' table DOES NOT have a 'views' column. To find popular products, JOIN with 'order_items' and count units sold.\n"
-    "- The 'users' table has 'id', 'username', and 'email'."
+    "Return exactly one SQL SELECT statement and nothing else. "
+    "No markdown, no code fences, no comments, no explanations.\n\n"
+    "Schema:\n" + _HARDCODED_SCHEMA
 )
 
-_SCHEMA_CACHE_TTL_SECONDS = max(60, int(os.getenv("SAGE_SCHEMA_CACHE_TTL_SECONDS", "300")))
-_SCHEMA_INFO_CACHE = {}
+# ── DB connection cache (one connection per process) ──────────────────────────
+_DB_CONN_CACHE: dict = {}
+_DB_CONN_LOCK  = threading.Lock()
+
+# ── Schema string cache (already hardcoded, kept for API compat) ──────────────
+_SCHEMA_INFO_CACHE: dict = {}
 _SCHEMA_CACHE_LOCK = threading.Lock()
+_SCHEMA_CACHE_TTL  = 300
+
+
+def _get_readonly_conn():
+    """Return a cached read-only mysql.connector connection."""
+    host     = os.getenv("DB_HOST",         "localhost")
+    db_name  = os.getenv("DB_NAME",         "shopy")
+    user     = (os.getenv("READ_DB_USER")   or os.getenv("DB_USER") or "").strip()
+    password = os.getenv("READ_DB_PASSWORD") or os.getenv("DB_PASSWORD", "")
+
+    cache_key = f"{user}@{host}/{db_name}"
+    with _DB_CONN_LOCK:
+        conn = _DB_CONN_CACHE.get(cache_key)
+        if conn:
+            try:
+                conn.ping(reconnect=True, attempts=2, delay=0)
+                return conn
+            except Exception:
+                pass
+        conn = mysql.connector.connect(
+            host=host, database=db_name, user=user, password=password,
+            connection_timeout=5, autocommit=True,
+        )
+        _DB_CONN_CACHE[cache_key] = conn
+        return conn
+
+
+def _run_select(sql: str) -> str:
+    """Execute a validated SELECT and return result as a readable string."""
+    conn = _get_readonly_conn()
+    cur  = conn.cursor(dictionary=True)
+    cur.execute(sql)
+    rows = cur.fetchmany(200)
+    cur.close()
+    if not rows:
+        return "No rows returned."
+    lines = []
+    for row in rows:
+        lines.append(", ".join(f"{k}={v}" for k, v in row.items()))
+    return "\n".join(lines)
+
+
+# ── Active provider detection ─────────────────────────────────────────────────
+def _active_provider() -> str:
+    if (os.getenv("GROQ_API_KEY") or "").strip():
+        return "groq"
+    if (os.getenv("GROK_API_KEY") or "").strip():
+        return "grok"
+    if (os.getenv("OPENROUTER_API_KEY") or "").strip():
+        return "openrouter"
+    raise RuntimeError("No AI provider configured. Set GROQ_API_KEY or OPENROUTER_API_KEY.")
 
 
 def _candidate_models() -> list:
-    """Deduplicated model list in priority order."""
-    api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
-    if not api_key:
-        raise RuntimeError("OPENROUTER_API_KEY is not configured.")
+    provider = _active_provider()
+    if provider == "groq":
+        pool = _GROQ_MODELS_MEDIUM if _SAGE_QUALITY == "medium" else _GROQ_MODELS_FAST
+        override = (os.getenv("GROQ_MODEL") or "").strip()
+    elif provider == "grok":
+        pool = _GROK_MODELS
+        override = (os.getenv("GROK_MODEL") or "").strip()
+    else:
+        pool = _OPENROUTER_MODELS
+        override = ""
 
-    seen = set()
-    result = []
-    for model in _FALLBACK_MODELS:
-        model = (model or "").strip()
-        if model and model not in seen:
-            seen.add(model)
-            result.append(model)
+    seen, result = set(), []
+    for m in ([override] if override else []) + pool:
+        m = (m or "").strip()
+        if m and m not in seen:
+            seen.add(m); result.append(m)
+    if not result:
+        raise RuntimeError(f"No models available for provider: {provider}")
     return result
 
 
-def _make_llm(
-    model: str,
-    temperature: float = 0.0,
-    max_tokens: int = 500,
-    request_timeout: int = 14,
-) -> ChatOpenAI:
-    """Build a ChatOpenAI pointed at OpenRouter for one specific model."""
-    api_key = (os.getenv("OPENROUTER_API_KEY") or "").strip()
-    return ChatOpenAI(
-        model=model,
-        temperature=temperature,
-        openai_api_key=api_key,
-        openai_api_base="https://openrouter.ai/api/v1",
-        default_headers={
-            "HTTP-Referer": "https://shopy.app",
-            "X-Title": "Shopy AI",
-        },
-        max_tokens=max_tokens,
-        request_timeout=request_timeout,
-    )
+def _token_budget(kind: str) -> int:
+    if kind == "sql":
+        return 260 if _SAGE_QUALITY == "medium" else 180
+    return 360 if _SAGE_QUALITY == "medium" else 240
 
 
-def _llm_invoke_with_failover(
-    prompt: str,
-    temperature: float = 0.0,
-    max_tokens: int = 500,
-    request_timeout: int = 14,
-) -> str:
-    """
-    Call .invoke(prompt) on each model in priority order.
-    Skips a model automatically on temporary availability failures.
-    Raises the last error only when every model has been exhausted.
-    """
+# ── Core LLM caller ───────────────────────────────────────────────────────────
+def _llm_invoke_with_failover(prompt: str, temperature: float = 0.0,
+                               max_tokens: int = 300, request_timeout: int = 10) -> str:
+    provider = _active_provider()
+    models   = _candidate_models()
     last_err = None
-    for model in _candidate_models():
+
+    for model in models:
         try:
-            llm = _make_llm(
-                model,
-                temperature,
-                max_tokens=max_tokens,
-                request_timeout=request_timeout,
-            )
-            raw = llm.invoke(prompt)
-            return _coerce_text(raw)
-        except Exception as exc:
-            msg = str(exc).lower()
-            if (
-                any(code in msg for code in ["429", "404", "402", "500", "502", "503", "504"])
-                or "rate" in msg
-                or "unavailable" in msg
-                or "timeout" in msg
-            ):
-                last_err = exc
+            if provider == "groq":
+                url     = "https://api.groq.com/openai/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {os.getenv('GROQ_API_KEY','').strip()}",
+                           "Content-Type": "application/json"}
+            elif provider == "grok":
+                url     = "https://api.x.ai/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {os.getenv('GROK_API_KEY','').strip()}",
+                           "Content-Type": "application/json"}
+            else:
+                url     = "https://openrouter.ai/api/v1/chat/completions"
+                headers = {"Authorization": f"Bearer {os.getenv('OPENROUTER_API_KEY','').strip()}",
+                           "Content-Type": "application/json",
+                           "HTTP-Referer": "https://shopy.app", "X-Title": "Shopy AI"}
+
+            payload = {"model": model,
+                       "messages": [{"role": "user", "content": prompt}],
+                       "temperature": temperature, "max_tokens": max_tokens}
+
+            resp = requests.post(url, headers=headers, json=payload, timeout=request_timeout)
+
+            if resp.status_code != 200:
+                last_err = RuntimeError(f"HTTP {resp.status_code}: {resp.text[:200]}")
                 continue
+
+            rj  = resp.json()
+            msg = rj["choices"][0]["message"]
+            txt = msg.get("content") or msg.get("reasoning") or ""
+            return str(txt).strip()
+
+        except Exception as exc:
+            s = str(exc).lower()
+            if any(c in s for c in ["429","404","402","500","502","503","504","timeout","unavailable","rate"]):
+                last_err = exc; continue
             raise
 
-    raise last_err or RuntimeError("All OpenRouter models are currently unavailable. Please try again shortly.")
+    raise last_err or RuntimeError("All AI models exhausted.")
 
 
-def _build_sqlalchemy_uri() -> str:
-    """
-    Build SQLAlchemy URI for read-only database access.
-    Enforces non-root credentials for AI query execution.
-    """
-    host = os.getenv("DB_HOST", "localhost")
-    db_name = os.getenv("DB_NAME", "shopy")
-
-    read_user = (os.getenv("READ_DB_USER") or os.getenv("DB_USER") or "").strip()
-    read_password = os.getenv("READ_DB_PASSWORD")
-    if read_password is None:
-        read_password = os.getenv("DB_PASSWORD", "")
-
-    if not read_user:
-        raise RuntimeError("Read-only DB user is not configured. Set READ_DB_USER.")
-    if read_user.lower() == "root":
-        raise RuntimeError("Read-only DB user cannot be root. Configure READ_DB_USER with least privilege.")
-
-    user_enc = quote_plus(read_user)
-    pwd_enc = quote_plus(read_password)
-    return f"mysql+mysqlconnector://{user_enc}:{pwd_enc}@{host}/{db_name}"
+# ── SQL helpers ───────────────────────────────────────────────────────────────
+def _strip_artifacts(text: str) -> str:
+    t = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
+    t = re.sub(r"```(?:sql)?", "", t, flags=re.IGNORECASE).replace("```", "").strip()
+    return t
 
 
-def _build_db_tool(db_uri: str) -> SQLDatabase:
-    """Create a SQLDatabase helper with lean schema payloads for lower latency."""
-    return SQLDatabase.from_uri(
-        db_uri,
-        include_tables=_INCLUDED_TABLES,
-        sample_rows_in_table_info=0,
-    )
+def _extract_sql(raw) -> str:
+    text = _strip_artifacts(str(raw))
+    text = re.sub(r"^[\s]*(SQL\s*QUERY|SQLQUERY|QUERY|SQL)\s*:\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"(--|#).*$", "", text, flags=re.MULTILINE)
+    text = re.sub(r"/\*.*?\*/", "", text, flags=re.DOTALL)
+    m = re.search(r"(?is)\bSELECT\b.*", text)
+    return (m.group(0) if m else text).strip()
 
 
-def _get_cached_schema_info(db_tool: SQLDatabase, db_uri: str) -> str:
-    """Cache table metadata to avoid full introspection on every request."""
-    now = time.time()
-
-    with _SCHEMA_CACHE_LOCK:
-        cached = _SCHEMA_INFO_CACHE.get(db_uri)
-        if cached and cached.get("expires_at", 0) > now:
-            return cached["schema_info"]
-
-    schema_info = db_tool.get_table_info(_INCLUDED_TABLES)
-
-    with _SCHEMA_CACHE_LOCK:
-        _SCHEMA_INFO_CACHE[db_uri] = {
-            "schema_info": schema_info,
-            "expires_at": now + _SCHEMA_CACHE_TTL_SECONDS,
-        }
-
-    return schema_info
-
-
-def _coerce_text(raw) -> str:
-    """Normalize model output object/string to plain text."""
-    if hasattr(raw, "content"):
-        return str(raw.content or "")
-    return str(raw or "")
-
-
-def _strip_model_artifacts(text: str) -> str:
-    """Strip common model formatting artifacts such as reasoning tags/fences."""
-    cleaned = (text or "").strip()
-    cleaned = re.sub(r"<think>.*?</think>", "", cleaned, flags=re.DOTALL | re.IGNORECASE).strip()
-    cleaned = re.sub(r"```(?:sql)?", "", cleaned, flags=re.IGNORECASE).replace("```", "").strip()
-    return cleaned
-
-
-def _strip_sql_comments(sql: str) -> str:
-    """Remove SQL comments so they don't trigger the security guard."""
-    sql = re.sub(r"/\*.*?\*/", "", sql, flags=re.DOTALL)
-    sql = re.sub(r"(--|#).*$", "", sql, flags=re.MULTILINE)
-    return sql.strip()
-
-
-def _extract_sql_candidate(raw_output) -> str:
-    """Extract SQL text from model output and keep from first SELECT onward."""
-    text = _strip_model_artifacts(_coerce_text(raw_output))
-    text = _strip_sql_comments(text)
-    text = re.sub(r"^\s*(SQL\s*QUERY|SQLQUERY|QUERY|SQL)\s*:\s*", "", text, flags=re.IGNORECASE)
-
-    match = re.search(r"(?is)\bSELECT\b.*", text)
-    if match:
-        text = match.group(0)
-
-    return text.strip()
-
-
-def _validate_select_only(sql: str) -> str:
-    """
-    Enforce single-statement SELECT-only SQL.
-    Validation is performed BEFORE execution.
-    """
-    candidate = _strip_sql_comments((sql or "").strip().strip("`").strip())
-    candidate = candidate.strip('"').strip("'").strip()
-
-    if not candidate:
-        raise ValueError("Generated SQL is empty.")
-
+def _validate_select(sql: str) -> str:
+    candidate = sql.strip().strip("`").strip('"').strip("'")
     if ";" in candidate:
         if candidate.count(";") > 1 or not candidate.endswith(";"):
             raise ValueError("Multiple SQL statements are not allowed.")
         candidate = candidate[:-1].strip()
-
-    upper_sql = candidate.upper()
-    first_word = upper_sql.split()[0] if upper_sql.split() else ""
-    if first_word != "SELECT":
-        raise ValueError(f"Generated statement must start with SELECT (got '{first_word or 'EMPTY'}').")
-
-    blocked_keywords = [
-        "DROP", "DELETE", "TRUNCATE", "UPDATE", "INSERT", "ALTER", "CREATE", "EXEC", "GRANT", "REVOKE",
-    ]
-    for keyword in blocked_keywords:
-        if re.search(r"\b" + re.escape(keyword) + r"\b", upper_sql):
-            raise ValueError(f"Blocked SQL keyword detected: {keyword}")
-
+    if not candidate:
+        raise ValueError("Generated SQL is empty.")
+    first = candidate.upper().split()[0] if candidate.split() else ""
+    if first != "SELECT":
+        raise ValueError(f"Generated statement must start with SELECT (got '{first or 'EMPTY'}').")
+    blocked = ["DROP","DELETE","TRUNCATE","UPDATE","INSERT","ALTER","CREATE","EXEC","GRANT","REVOKE"]
+    for kw in blocked:
+        if re.search(r"\b" + kw + r"\b", candidate.upper()):
+            raise ValueError(f"Blocked keyword: {kw}")
     return candidate
 
 
-def _ensure_reasonable_limit(sql: str, default_limit: int = 200) -> str:
-    """Guard against oversized result sets by adding LIMIT to non-aggregate SELECTs."""
-    candidate = (sql or "").strip()
-    upper = candidate.upper()
-
+def _add_limit(sql: str, n: int = 200) -> str:
+    upper = sql.upper()
     if " LIMIT " in upper:
-        return candidate
-
-    aggregate_tokens = (" COUNT(", " SUM(", " AVG(", " MIN(", " MAX(")
-    if any(token in upper for token in aggregate_tokens):
-        return candidate
-
-    return f"{candidate} LIMIT {default_limit}"
+        return sql
+    agg = (" COUNT("," SUM("," AVG("," MIN("," MAX(")
+    if any(a in upper for a in agg):
+        return sql
+    return f"{sql} LIMIT {n}"
 
 
-def _generate_valid_sql(sql_prompt: str) -> str:
-    """Generate SQL and auto-retry once if the model returns malformed output."""
-    last_error = None
-    prompt = sql_prompt
-
+def _generate_sql(sql_prompt: str) -> str:
+    last_err = None
+    prompt   = sql_prompt
     for _ in range(2):
-        raw_sql = _llm_invoke_with_failover(
-            prompt,
-            temperature=0.0,
-            max_tokens=260,
-            request_timeout=10,
-        )
+        raw = _llm_invoke_with_failover(prompt, temperature=0.0,
+                                        max_tokens=_token_budget("sql"), request_timeout=8)
         try:
-            candidate = _validate_select_only(_extract_sql_candidate(raw_sql))
-            return _ensure_reasonable_limit(candidate)
-        except ValueError as exc:
-            last_error = exc
-            prompt = (
-                f"{sql_prompt}\n\n"
-                "Previous output was invalid. Return exactly one valid SELECT query only."
-            )
-
-    raise last_error or ValueError("Could not generate a valid SELECT query.")
+            return _add_limit(_validate_select(_extract_sql(raw)))
+        except ValueError as e:
+            last_err = e
+            prompt = sql_prompt + "\n\nPrevious output was invalid. Return exactly one SELECT query only."
+    raise last_err or ValueError("Could not generate a valid SELECT.")
 
 
-def _repair_sql_after_execution_error(
-    question: str,
-    role_scope: str,
-    schema_info: str,
-    failed_sql: str,
-    execution_error: str,
-) -> str:
-    """Ask the model for one corrected SELECT when execution fails."""
-    repair_prompt = (
-        f"{_SQL_RULES}\n\n"
-        f"{role_scope}"
-        "The previous SQL failed at execution time. Fix it using the schema below.\n"
-        "Return exactly one corrected SELECT statement and nothing else.\n\n"
-        f"Database schema information:\n{schema_info}\n\n"
-        f"User question:\n{question.strip()}\n\n"
-        f"Previous SQL:\n{failed_sql}\n\n"
-        f"Database error:\n{execution_error}\n\n"
-        "Corrected SQL:"
-    )
-
-    repaired_raw = _llm_invoke_with_failover(
-        repair_prompt,
-        temperature=0.0,
-        max_tokens=260,
-        request_timeout=10,
-    )
-    repaired = _validate_select_only(_extract_sql_candidate(repaired_raw))
-    return _ensure_reasonable_limit(repaired)
-
-
+# ── Quick local answers ───────────────────────────────────────────────────────
 def _quick_local_answer(question: str, role: str) -> str:
-    """Fast path for non-DB intents so trivial requests return instantly."""
-    q = (question or "").strip().lower()
-    if not q:
-        return ""
-
-    if re.fullmatch(r"(hi|hello|hey|salam|assalam o alaikum|assalamualaikum)[!. ]*", q):
-        return "Hello. I am Sage. Ask me anything about your live Shopy data."
-
-    if any(token in q for token in ["who made you", "who built you", "your name", "who are you"]):
-        return "I am Sage, the Shopy assistant built by Hammad and Mobeen."
-
-    if q in {"thanks", "thank you", "ok", "okay", "great"}:
-        return "You are welcome. I am here whenever you need analytics help."
-
+    q = question.strip().lower()
+    if re.fullmatch(r"(hi|hello|hey|salam|assalam[\w ]*)[!. ]*", q):
+        return "Hello! I'm Sage. Ask me anything about your live Shopy data."
+    if any(t in q for t in ["who made you","who built you","your name","who are you"]):
+        return "I'm Sage, the Shopy AI assistant built by Hammad and Mobeen."
+    if q in {"thanks","thank you","ok","okay","great"}:
+        return "You're welcome! I'm here whenever you need analytics help."
     if q == "help" or q.startswith("help "):
-        if role == "retailer":
-            return "You can ask about revenue, top products, pending orders, low stock, and sales trends."
-        return "You can ask about product recommendations, prices, stock, ratings, categories, and deals."
-
+        return ("You can ask about revenue, top products, pending orders, and low stock."
+                if role == "retailer" else
+                "You can ask about products, prices, ratings, categories, and deals.")
     return ""
 
 
-def _build_resilient_fallback_answer(question: str, role: str, sql: str, db_output: str) -> str:
-    """Local fallback summary to keep responses available during model outages."""
-    raw = (db_output or "").strip()
-    lowered = raw.lower()
-    if not raw or lowered in {"[]", "()", "none"} or "no rows returned" in lowered:
-        return "I checked the live database and found no matching data for that question right now."
-
-    if role == "retailer":
-        prefix = "I ran your request on the live store database and found results."
-    else:
-        prefix = "I checked the live store data and found this result."
-
-    return (
-        f"{prefix}\n\n"
-        f"Question: {question.strip()}\n"
-        f"SQL used: {sql}\n"
-        f"Result snapshot: {raw}"
-    )
+# ── Fallback synthesizer (no LLM) ────────────────────────────────────────────
+def _local_fallback(question: str, sql: str, db_out: str) -> str:
+    if not db_out or db_out.strip() in {"No rows returned.", "[]", ""}:
+        return "I checked the live database and found no matching data for that question."
+    return f"Here is the live result:\n\n{db_out}\n\n(SQL: {sql})"
 
 
-def _truncate(text: str, max_chars: int = 2200) -> str:
-    """Keep debug payload readable in UI."""
-    payload = (text or "").strip()
-    if len(payload) <= max_chars:
-        return payload
-    return payload[:max_chars].rstrip() + "\n... (output truncated for readability)"
+def _truncate(text: str, n: int = 2500) -> str:
+    return text[:n].rstrip() + "\n...(truncated)" if len(text) > n else text
 
 
+# ── Public entry point ────────────────────────────────────────────────────────
 def ask_sage_langchain(question: str, role: str, user_id: int) -> dict:
-    """Generate SQL, validate it, execute safely, and synthesize final answer."""
+    """Generate SQL, validate, execute, synthesize. Returns {query_ran, db_output, answer}."""
     generated_sql = ""
     db_output_str = ""
-    answer = ""
+    answer        = ""
 
     try:
+        # 1. Quick local check
         quick = _quick_local_answer(question, role)
         if quick:
-            return {
-                "query_ran": "(local quick response)",
-                "db_output": "No database query was required for this request.",
-                "answer": quick,
-            }
+            return {"query_ran": "(local response — no DB query needed)",
+                    "db_output": "No database query required.", "answer": quick}
 
-        db_uri = _build_sqlalchemy_uri()
-        db_tool = _build_db_tool(db_uri)
-        schema_info = _get_cached_schema_info(db_tool, db_uri)
-
+        # 2. Role scope
         role_scope = ""
         if role == "retailer":
-            role_scope = (
-                f"You are serving retailer user_id={user_id}. "
-                f"For product/order analytics, scope results to retailer_id={user_id} unless explicitly asked for store-wide totals. "
-            )
+            role_scope = (f"You are serving retailer user_id={user_id}. "
+                          f"Scope product/order results to retailer_id={user_id} "
+                          f"unless asked for store-wide totals.\n")
 
+        # 3. Build SQL generation prompt (schema already hardcoded — no DB round-trip)
         sql_prompt = (
             f"{_SQL_RULES}\n\n"
             f"{role_scope}"
-            f"Database schema information:\n{schema_info}\n\n"
-            f"User question:\n{question.strip()}\n\n"
+            f"User question: {question.strip()}\n\n"
             "SQL:"
         )
 
-        generated_sql = _generate_valid_sql(sql_prompt)
+        # 4. Generate + validate SQL
+        generated_sql = _generate_sql(sql_prompt)
 
+        # 5. Execute directly
         try:
-            query_result = db_tool.run(generated_sql)
-        except Exception as execution_error:
-            repaired_sql = _repair_sql_after_execution_error(
-                question=question,
-                role_scope=role_scope,
-                schema_info=schema_info,
-                failed_sql=generated_sql,
-                execution_error=str(execution_error),
+            db_output_str = _truncate(_run_select(generated_sql))
+        except Exception as exec_err:
+            # One repair attempt
+            repair_prompt = (
+                f"{_SQL_RULES}\n\n{role_scope}"
+                f"The previous SQL failed. Fix it.\n"
+                f"Failed SQL: {generated_sql}\n"
+                f"Error: {str(exec_err)[:200]}\n"
+                f"User question: {question.strip()}\n\nCorrected SQL:"
             )
-            generated_sql = repaired_sql
-            query_result = db_tool.run(generated_sql)
+            raw2 = _llm_invoke_with_failover(repair_prompt, temperature=0.0,
+                                             max_tokens=_token_budget("sql"), request_timeout=8)
+            generated_sql = _add_limit(_validate_select(_extract_sql(raw2)))
+            db_output_str = _truncate(_run_select(generated_sql))
 
-        db_output_str = _truncate(str(query_result) if query_result is not None else "No rows returned.")
-
-        if role == "retailer":
-            persona = "You are Sage, a professional and analytical retail assistant. Provide clear, business-focused insights to the store owner."
-        else:
-            persona = "You are Sage, a warm and supportive customer care agent for Shopy. Be friendly, helpful, and focused on the shopper's experience."
+        # 6. Synthesize answer
+        persona = ("You are Sage, a professional retail analytics assistant. "
+                   "Give concise, business-focused insights."
+                   if role == "retailer" else
+                   "You are Sage, a friendly Shopy customer care agent. "
+                   "Be warm and helpful.")
 
         summary_prompt = (
             f"{persona}\n"
-            "Answer the question using ONLY the SQL result below.\n"
-            "If there are no rows, clearly say there is no matching data.\n"
-            "Do not mention internal prompts or secrets.\n\n"
-            f"User question:\n{question.strip()}\n\n"
-            f"Executed SQL:\n{generated_sql}\n\n"
-            f"Raw SQL result:\n{db_output_str}\n\n"
-            "Final answer:"
+            f"Answer ONLY using the SQL result below. "
+            f"If no rows, say no data found.\n\n"
+            f"Question: {question.strip()}\n"
+            f"SQL: {generated_sql}\n"
+            f"Result:\n{db_output_str}\n\n"
+            "Answer:"
         )
 
         try:
-            raw_answer = _llm_invoke_with_failover(
-                summary_prompt,
-                temperature=0.2,
-                max_tokens=420,
-                request_timeout=10,
-            )
-            answer = _strip_model_artifacts(raw_answer) or "No response generated."
+            raw_ans = _llm_invoke_with_failover(summary_prompt, temperature=0.2,
+                                                max_tokens=_token_budget("summary"),
+                                                request_timeout=10)
+            answer = _strip_artifacts(raw_ans) or "No response generated."
         except Exception:
-            answer = _build_resilient_fallback_answer(question, role, generated_sql, db_output_str)
+            answer = _local_fallback(question, generated_sql, db_output_str)
 
     except ValueError as ve:
         generated_sql = generated_sql or "(security guard rejected query)"
         db_output_str = f"Query discarded by security guard: {str(ve)[:200]}"
-        answer = "I could not execute that request safely. Please rephrase your question."
+        answer        = "I could not execute that safely. Please rephrase your question."
 
     except Exception as exc:
         generated_sql = generated_sql or "(not generated)"
         db_output_str = f"Pipeline error: {str(exc)[:250]}"
-        answer = (
-            "I could not complete the SQL pipeline for this request, but I am still here to help. "
-            "Please rephrase your question in plain business terms and try again."
-        )
+        answer        = ("I couldn't complete that request right now. "
+                         "Please try rephrasing in plain business terms.")
 
-    return {
-        "query_ran": generated_sql,
-        "db_output": db_output_str,
-        "answer": answer,
-    }
+    return {"query_ran": generated_sql, "db_output": db_output_str, "answer": answer}

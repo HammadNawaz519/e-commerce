@@ -1,651 +1,178 @@
-================================================================================
-  PHASE 1 — DATABASE ENGINEERING (COMPLETE)
-  Project: Shopy — E-Commerce Conversational Database Assistant
-  Domain:  E-Commerce
-  Course:  CS-254 Database Systems, Spring 2026
-  Built by: Hammad and Mobeen
-================================================================================
-
-
-STATUS: ✅ FULLY COMPLETE
-All tables created, all FK constraints declared, normalization to 3NF verified,
-realistic sample data populated (≥10 rows per table), and full documentation
-provided below.
-
-
-================================================================================
-1. DOMAIN JUSTIFICATION
-================================================================================
-We chose the E-Commerce domain because it naturally produces a rich set of
-inter-related entities — users, products, orders, payments, shipments, reviews —
-all linked through well-defined foreign key relationships. E-Commerce data
-changes constantly (new orders, stock updates, price changes, reviews) which
-makes the dynamic nature of our AI assistant clearly demonstrable. The data
-supports single-table queries, multi-table joins, aggregations, and analytical
-questions, satisfying all rubric requirements.
-
-
-================================================================================
-2. SCHEMA OVERVIEW — 15 TABLES
-================================================================================
-Our database contains 15 fully related tables, far exceeding the minimum 7-8
-requirement. Each table has ≥4 meaningful columns beyond the PK. All inter-table
-references use declared FOREIGN KEY constraints (not just matching column names).
-
-Tables:
-  1.  users            — Customers and retailers (role-based)
-  2.  categories       — Product classification taxonomy
-  3.  products         — Product catalog with pricing, stock, and SKU
-  4.  product_images   — Multi-image gallery per product (many-to-one)
-  5.  discount_codes   — Promotional coupons with usage tracking
-  6.  addresses        — User shipping addresses (one-to-many)
-  7.  orders           — Purchase orders with shipping and payment info
-  8.  order_items      — Junction table: Orders ↔ Products (many-to-many)
-  9.  cart             — Active shopping cart items (junction: User ↔ Product)
-  10. wishlists        — Saved wish items (junction: User ↔ Product)
-  11. reviews          — Product reviews with ratings (junction: User ↔ Product)
-  12. ai_chat_history  — Conversational AI logs per user
-  13. notifications    — In-app, SMS, and email notifications per user
-  14. payments         — Payment transaction records per order
-  15. shipments        — Courier & tracking records per order
-
-Junction Tables (resolving many-to-many relationships):
-  - order_items  → resolves Orders ↔ Products (carries quantity, unit_price, discount)
-  - cart         → resolves Users ↔ Products (carries quantity)
-  - wishlists    → resolves Users ↔ Products (carries priority, target_price, note)
-  - reviews      → resolves Users ↔ Products (carries rating, title, comment)
-
-
-================================================================================
-3. RELATIONSHIPS & CARDINALITY
-================================================================================
-Relationship                              Cardinality        Resolved By
-─────────────────────────────────────────────────────────────────────────────────
-users ↔ products                          1:N                products.retailer_id → users.id
-users ↔ addresses                         1:N                addresses.user_id → users.id
-users ↔ orders                            1:N                orders.customer_id → users.id
-users ↔ ai_chat_history                   1:N                ai_chat_history.user_id → users.id
-users ↔ notifications                     1:N                notifications.user_id → users.id
-categories ↔ products                     1:N                products.category_id → categories.id
-products ↔ product_images                 1:N                product_images.product_id → products.id
-users ↔ product_images (uploader)         1:N                product_images.uploaded_by_user_id → users.id
-orders ↔ order_items                      1:N                order_items.order_id → orders.id
-products ↔ order_items                    1:N                order_items.product_id → products.id
-users (retailer) ↔ order_items            1:N                order_items.retailer_id → users.id
-discount_codes ↔ orders                   1:N                orders.discount_code_id → discount_codes.id
-orders ↔ payments                         1:N                payments.order_id → orders.id
-orders ↔ shipments                        1:N                shipments.order_id → orders.id
-users ↔ products (via cart)               M:N (junction)     cart(user_id, product_id)
-users ↔ products (via wishlists)          M:N (junction)     wishlists(user_id, product_id)
-users ↔ products (via reviews)            M:N (junction)     reviews(product_id, user_id)
-
-
-================================================================================
-4. NORMALIZATION — THIRD NORMAL FORM (3NF)
-================================================================================
-
-1NF — Each cell contains exactly one value:
-  ✅ No multi-valued columns. Addresses, phone numbers, and images are each
-     stored in their own dedicated rows/tables (addresses table, product_images
-     table). No comma-separated values anywhere.
-
-2NF — Every non-key column depends on the WHOLE primary key:
-  ✅ All tables use single-column AUTO_INCREMENT primary keys, so 2NF is
-     automatically satisfied. Junction tables (order_items, cart, wishlists,
-     reviews) use surrogate PKs and declared FK relationships.
-
-3NF — No non-key column depends on another non-key column:
-  ✅ Shipping city/province belong to the addresses table, not repeated in
-     orders. Product category info is in categories, not duplicated in products.
-     Payment details are in a separate payments table, not in orders. Courier
-     tracking is in shipments, not in orders.
-
-
-================================================================================
-5. ALL CREATE TABLE COMMANDS
-================================================================================
-(Full SQL is in shopy.sql - below is the complete reproduction)
-
-CREATE DATABASE IF NOT EXISTS shopy CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE shopy;
-SET NAMES utf8mb4;
-
--- ============================================================
--- 1) CORE TABLES (Normalized, PK/FK-focused)
--- ============================================================
-
-CREATE TABLE IF NOT EXISTS users (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    username      VARCHAR(80)  NOT NULL,
-    phone_number  VARCHAR(30)  DEFAULT NULL,
-    email         VARCHAR(120) NOT NULL,
-    password      VARCHAR(256) NOT NULL,
-    verified      TINYINT(1)   NOT NULL DEFAULT 0,
-    role          VARCHAR(20)  NOT NULL DEFAULT 'customer',
-    profile_pic   TEXT         DEFAULT NULL,
-    bio           TEXT         DEFAULT NULL,
-    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS categories (
-    id            INT AUTO_INCREMENT PRIMARY KEY,
-    name          VARCHAR(100) NOT NULL,
-    slug          VARCHAR(120) DEFAULT NULL,
-    description   VARCHAR(255) DEFAULT NULL,
-    is_active     TINYINT(1)   NOT NULL DEFAULT 1,
-    created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS products (
-    id             INT AUTO_INCREMENT PRIMARY KEY,
-    retailer_id    INT           NOT NULL,
-    category_id    INT           DEFAULT NULL,
-    name           VARCHAR(200)  NOT NULL,
-    description    TEXT,
-    price          DECIMAL(10,2) NOT NULL,
-    original_price DECIMAL(10,2) DEFAULT NULL,
-    stock          INT           NOT NULL DEFAULT 0,
-    image_url      TEXT          DEFAULT NULL,
-    sku            VARCHAR(80)   DEFAULT NULL,
-    weight_grams   INT           DEFAULT NULL,
-    is_active      TINYINT(1)    NOT NULL DEFAULT 1,
-    created_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at     TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (retailer_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS product_images (
-    id                  INT AUTO_INCREMENT PRIMARY KEY,
-    product_id          INT          NOT NULL,
-    image_url           TEXT         NOT NULL,
-    alt_text            VARCHAR(180) DEFAULT NULL,
-    sort_order          INT          NOT NULL DEFAULT 1,
-    is_primary          TINYINT(1)   NOT NULL DEFAULT 0,
-    uploaded_by_user_id INT          DEFAULT NULL,
-    created_at          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (uploaded_by_user_id) REFERENCES users(id) ON DELETE SET NULL
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS discount_codes (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    code            VARCHAR(50)   NOT NULL,
-    campaign_name   VARCHAR(120)  DEFAULT NULL,
-    discount_type   VARCHAR(20)   NOT NULL DEFAULT 'percent',
-    discount_value  DECIMAL(10,2) NOT NULL,
-    min_order_value DECIMAL(10,2) NOT NULL DEFAULT 0,
-    max_uses        INT           DEFAULT NULL,
-    uses_count      INT           NOT NULL DEFAULT 0,
-    expires_at      DATETIME      DEFAULT NULL,
-    is_active       TINYINT(1)    NOT NULL DEFAULT 1,
-    created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS addresses (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    user_id      INT          NOT NULL,
-    label        VARCHAR(50)  NOT NULL DEFAULT 'Home',
-    full_name    VARCHAR(100) DEFAULT NULL,
-    phone        VARCHAR(30)  DEFAULT NULL,
-    address_line TEXT         NOT NULL,
-    city         VARCHAR(100) DEFAULT NULL,
-    province     VARCHAR(100) DEFAULT NULL,
-    postal_code  VARCHAR(20)  DEFAULT NULL,
-    country      VARCHAR(100) NOT NULL DEFAULT 'Pakistan',
-    is_default   TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS orders (
-    id               INT AUTO_INCREMENT PRIMARY KEY,
-    customer_id      INT           NOT NULL,
-    total_amount     DECIMAL(10,2) NOT NULL,
-    status           VARCHAR(30)   NOT NULL DEFAULT 'pending',
-    shipping_name    VARCHAR(100)  DEFAULT NULL,
-    shipping_address TEXT          DEFAULT NULL,
-    shipping_phone   VARCHAR(30)   DEFAULT NULL,
-    notes            TEXT          DEFAULT NULL,
-    discount_code_id INT           DEFAULT NULL,
-    discount_amount  DECIMAL(10,2) NOT NULL DEFAULT 0,
-    payment_method   VARCHAR(30)   NOT NULL DEFAULT 'cod',
-    payment_status   VARCHAR(20)   NOT NULL DEFAULT 'pending',
-    payment_ref      VARCHAR(64)   DEFAULT NULL,
-    created_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (discount_code_id) REFERENCES discount_codes(id) ON DELETE SET NULL
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS order_items (
-    id                INT AUTO_INCREMENT PRIMARY KEY,
-    order_id          INT           NOT NULL,
-    product_id        INT           DEFAULT NULL,
-    retailer_id       INT           DEFAULT NULL,
-    product_name      VARCHAR(200)  DEFAULT NULL,
-    quantity          INT           NOT NULL,
-    unit_price        DECIMAL(10,2) NOT NULL,
-    discount_per_unit DECIMAL(10,2) NOT NULL DEFAULT 0,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL,
-    FOREIGN KEY (retailer_id) REFERENCES users(id) ON DELETE SET NULL
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS cart (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT        NOT NULL,
-    product_id  INT        NOT NULL,
-    quantity    INT        NOT NULL DEFAULT 1,
-    added_at    TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP  NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS wishlists (
-    id                    INT AUTO_INCREMENT PRIMARY KEY,
-    user_id               INT           NOT NULL,
-    product_id            INT           NOT NULL,
-    priority              TINYINT       NOT NULL DEFAULT 3,
-    target_price          DECIMAL(10,2) DEFAULT NULL,
-    notify_on_price_drop  TINYINT(1)    NOT NULL DEFAULT 0,
-    note                  VARCHAR(255)  DEFAULT NULL,
-    added_at              TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (priority BETWEEN 1 AND 5),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS reviews (
-    id                   INT AUTO_INCREMENT PRIMARY KEY,
-    product_id           INT          NOT NULL,
-    user_id              INT          NOT NULL,
-    rating               INT          NOT NULL,
-    title                VARCHAR(120) DEFAULT NULL,
-    comment              TEXT         DEFAULT NULL,
-    is_verified_purchase TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK (rating BETWEEN 1 AND 5),
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS ai_chat_history (
-    id         INT AUTO_INCREMENT PRIMARY KEY,
-    user_id    INT NOT NULL,
-    role       VARCHAR(20) NOT NULL DEFAULT 'customer',
-    sender     ENUM('user','bot') NOT NULL,
-    message    TEXT NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-CREATE TABLE IF NOT EXISTS notifications (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT          NOT NULL,
-    message     TEXT         NOT NULL,
-    type        VARCHAR(50)  NOT NULL DEFAULT 'info',
-    channel     VARCHAR(30)  NOT NULL DEFAULT 'in_app',
-    action_url  VARCHAR(255) DEFAULT NULL,
-    is_read     TINYINT(1)   NOT NULL DEFAULT 0,
-    created_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
--- Added for Phase-1 completeness in e-commerce domain
-CREATE TABLE IF NOT EXISTS payments (
-    id              INT AUTO_INCREMENT PRIMARY KEY,
-    order_id        INT           NOT NULL,
-    payment_method  VARCHAR(30)   NOT NULL,
-    provider        VARCHAR(40)   DEFAULT NULL,
-    amount_paid     DECIMAL(10,2) NOT NULL,
-    payment_status  VARCHAR(20)   NOT NULL DEFAULT 'pending',
-    transaction_ref VARCHAR(120)  DEFAULT NULL,
-    paid_at         DATETIME      DEFAULT NULL,
-    created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
--- Added for Phase-1 completeness in e-commerce domain
-CREATE TABLE IF NOT EXISTS shipments (
-    id                INT AUTO_INCREMENT PRIMARY KEY,
-    order_id          INT           NOT NULL,
-    courier_name      VARCHAR(80)   NOT NULL,
-    tracking_number   VARCHAR(120)  DEFAULT NULL,
-    shipment_status   VARCHAR(20)   NOT NULL DEFAULT 'pending',
-    shipped_at        DATETIME      DEFAULT NULL,
-    expected_delivery DATETIME      DEFAULT NULL,
-    delivered_at      DATETIME      DEFAULT NULL,
-    shipping_cost     DECIMAL(10,2) NOT NULL DEFAULT 0,
-    created_at        TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE
-
-
-) ENGINE=InnoDB;
-
-================================================================================
-6. ALL INSERT COMMANDS (SAMPLE DATA)
-================================================================================
-All sample data is realistic with Pakistani names, real addresses, proper pricing
-in PKR, and meaningful relationships. Every table has ≥10 rows.
-
-(Full INSERT statements are in shopy.sql — key summary below)
-
-Users:       15 rows (5 retailers + 10 customers)
-Categories:  10 rows (Electronics, Fashion, Home and Garden, Sports, Books,
-                       Beauty, Toys, Food, Health, Automobiles)
-Products:    20 rows (distributed across 5 retailers and 10 categories)
-Product Images: 20 rows (one primary image per product)
-Discount Codes: 10 rows (8 active + 1 expired + various types)
-Addresses:   12 rows (10 default home + 2 office addresses)
-Orders:      12 rows (various statuses: delivered, shipped, processing,
-                       pending, cancelled)
-Order Items: 24 rows (linking orders to products with pricing)
-Cart:        10 rows (active cart items for 10 customers)
-Wishlists:   12 rows (with priority, target price, notes)
-Reviews:     15 rows (verified and non-verified purchases)
-AI Chat History: 10 rows (customer and retailer conversations)
-Notifications:   12 rows (order updates, promo alerts, price drops)
-Payments:    12 rows (card, easypaisa, jazzcash, cod, bank_transfer)
-Shipments:   10 rows (TCS, Leopards, BlueEx, MNP couriers with tracking)
-
-
-================================================================================
-7. DATA DICTIONARY
-================================================================================
-
-─── TABLE: users ───────────────────────────────────────────────────────────────
-Column       | Type         | PK/FK | Constraints       | Description
-─────────────┼──────────────┼───────┼───────────────────┼──────────────────────
-id           | INT          | PK    | AUTO_INCREMENT    | Unique user identifier
-username     | VARCHAR(80)  |       | NOT NULL          | Display name
-phone_number | VARCHAR(30)  |       | DEFAULT NULL      | Contact phone number
-email        | VARCHAR(120) |       | NOT NULL          | Login email address
-password     | VARCHAR(256) |       | NOT NULL          | Hashed password (pbkdf2)
-verified     | TINYINT(1)   |       | NOT NULL, DEFAULT 0 | Email verification flag
-role         | VARCHAR(20)  |       | NOT NULL, DEFAULT 'customer' | User role (customer/retailer)
-profile_pic  | TEXT         |       | DEFAULT NULL      | Profile image URL path
-bio          | TEXT         |       | DEFAULT NULL      | User biography text
-created_at   | TIMESTAMP    |       | NOT NULL, DEFAULT CURRENT_TIMESTAMP | Account creation time
-updated_at   | TIMESTAMP    |       | NOT NULL, ON UPDATE CURRENT_TIMESTAMP | Last modification time
-
-─── TABLE: categories ─────────────────────────────────────────────────────────
-Column       | Type         | PK/FK | Constraints       | Description
-─────────────┼──────────────┼───────┼───────────────────┼──────────────────────
-id           | INT          | PK    | AUTO_INCREMENT    | Unique category identifier
-name         | VARCHAR(100) |       | NOT NULL          | Category display name
-slug         | VARCHAR(120) |       | DEFAULT NULL      | URL-friendly slug
-description  | VARCHAR(255) |       | DEFAULT NULL      | Category description
-is_active    | TINYINT(1)   |       | NOT NULL, DEFAULT 1 | Whether category is visible
-created_at   | TIMESTAMP    |       | NOT NULL          | Creation timestamp
-updated_at   | TIMESTAMP    |       | NOT NULL          | Last update timestamp
-
-─── TABLE: products ───────────────────────────────────────────────────────────
-Column          | Type          | PK/FK              | Constraints       | Description
-────────────────┼───────────────┼────────────────────┼───────────────────┼──────────────────
-id              | INT           | PK                 | AUTO_INCREMENT    | Unique product ID
-retailer_id     | INT           | FK → users.id      | NOT NULL          | Seller of this product
-category_id     | INT           | FK → categories.id | DEFAULT NULL      | Product category
-name            | VARCHAR(200)  |                    | NOT NULL          | Product title
-description     | TEXT          |                    |                   | Full product description
-price           | DECIMAL(10,2) |                    | NOT NULL          | Current selling price (Rs)
-original_price  | DECIMAL(10,2) |                    | DEFAULT NULL      | Original MRP for discount calc
-stock           | INT           |                    | NOT NULL, DEFAULT 0 | Available inventory count
-image_url       | TEXT          |                    | DEFAULT NULL      | Primary product image path
-sku             | VARCHAR(80)   |                    | DEFAULT NULL      | Stock Keeping Unit code
-weight_grams    | INT           |                    | DEFAULT NULL      | Product weight in grams
-is_active       | TINYINT(1)    |                    | NOT NULL, DEFAULT 1 | Soft delete flag
-created_at      | TIMESTAMP     |                    | NOT NULL          | Listing creation time
-updated_at      | TIMESTAMP     |                    | NOT NULL          | Last modification time
-
-─── TABLE: product_images ─────────────────────────────────────────────────────
-Column              | Type         | PK/FK              | Constraints       | Description
-────────────────────┼──────────────┼────────────────────┼───────────────────┼──────────────────
-id                  | INT          | PK                 | AUTO_INCREMENT    | Image record ID
-product_id          | INT          | FK → products.id   | NOT NULL          | Parent product
-image_url           | TEXT         |                    | NOT NULL          | Image file path
-alt_text            | VARCHAR(180) |                    | DEFAULT NULL      | Alt text for accessibility
-sort_order          | INT          |                    | NOT NULL, DEFAULT 1 | Display order position
-is_primary          | TINYINT(1)   |                    | NOT NULL, DEFAULT 0 | Primary thumbnail flag
-uploaded_by_user_id | INT          | FK → users.id      | DEFAULT NULL      | User who uploaded image
-created_at          | TIMESTAMP    |                    | NOT NULL          | Upload timestamp
-
-─── TABLE: discount_codes ─────────────────────────────────────────────────────
-Column          | Type          | PK/FK | Constraints       | Description
-────────────────┼───────────────┼───────┼───────────────────┼──────────────────
-id              | INT           | PK    | AUTO_INCREMENT    | Discount code ID
-code            | VARCHAR(50)   |       | NOT NULL          | Promo code string
-campaign_name   | VARCHAR(120)  |       | DEFAULT NULL      | Campaign label
-discount_type   | VARCHAR(20)   |       | NOT NULL, DEFAULT 'percent' | Type: percent or fixed
-discount_value  | DECIMAL(10,2) |       | NOT NULL          | Discount amount/percentage
-min_order_value | DECIMAL(10,2) |       | NOT NULL, DEFAULT 0 | Minimum order to apply code
-max_uses        | INT           |       | DEFAULT NULL      | Maximum redemption count
-uses_count      | INT           |       | NOT NULL, DEFAULT 0 | Times redeemed so far
-expires_at      | DATETIME      |       | DEFAULT NULL      | Expiration date
-is_active       | TINYINT(1)    |       | NOT NULL, DEFAULT 1 | Whether code is active
-created_at      | TIMESTAMP     |       | NOT NULL          | Code creation time
-
-─── TABLE: addresses ──────────────────────────────────────────────────────────
-Column       | Type         | PK/FK         | Constraints       | Description
-─────────────┼──────────────┼───────────────┼───────────────────┼──────────────────
-id           | INT          | PK            | AUTO_INCREMENT    | Address record ID
-user_id      | INT          | FK → users.id | NOT NULL          | Owner of this address
-label        | VARCHAR(50)  |               | NOT NULL, DEFAULT 'Home' | Address label (Home/Office)
-full_name    | VARCHAR(100) |               | DEFAULT NULL      | Recipient full name
-phone        | VARCHAR(30)  |               | DEFAULT NULL      | Contact phone number
-address_line | TEXT         |               | NOT NULL          | Street address line
-city         | VARCHAR(100) |               | DEFAULT NULL      | City name
-province     | VARCHAR(100) |               | DEFAULT NULL      | Province/state
-postal_code  | VARCHAR(20)  |               | DEFAULT NULL      | ZIP/postal code
-country      | VARCHAR(100) |               | NOT NULL, DEFAULT 'Pakistan' | Country name
-is_default   | TINYINT(1)   |               | NOT NULL, DEFAULT 0 | Default address flag
-created_at   | TIMESTAMP    |               | NOT NULL          | Record creation time
-
-─── TABLE: orders ─────────────────────────────────────────────────────────────
-Column           | Type          | PK/FK                   | Constraints       | Description
-─────────────────┼───────────────┼─────────────────────────┼───────────────────┼──────────────────
-id               | INT           | PK                      | AUTO_INCREMENT    | Order ID
-customer_id      | INT           | FK → users.id           | NOT NULL          | Customer who placed order
-total_amount     | DECIMAL(10,2) |                         | NOT NULL          | Total order value (Rs)
-status           | VARCHAR(30)   |                         | NOT NULL, DEFAULT 'pending' | Order lifecycle status
-shipping_name    | VARCHAR(100)  |                         | DEFAULT NULL      | Recipient name
-shipping_address | TEXT          |                         | DEFAULT NULL      | Delivery address
-shipping_phone   | VARCHAR(30)   |                         | DEFAULT NULL      | Delivery phone
-notes            | TEXT          |                         | DEFAULT NULL      | Customer notes
-discount_code_id | INT           | FK → discount_codes.id  | DEFAULT NULL      | Applied promo code
-discount_amount  | DECIMAL(10,2) |                         | NOT NULL, DEFAULT 0 | Discount deducted
-payment_method   | VARCHAR(30)   |                         | NOT NULL, DEFAULT 'cod' | Payment type
-payment_status   | VARCHAR(20)   |                         | NOT NULL, DEFAULT 'pending' | Payment state
-payment_ref      | VARCHAR(64)   |                         | DEFAULT NULL      | Payment reference code
-created_at       | TIMESTAMP     |                         | NOT NULL          | Order placement time
-updated_at       | TIMESTAMP     |                         | NOT NULL          | Last status update
-
-─── TABLE: order_items ────────────────────────────────────────────────────────
-Column            | Type          | PK/FK              | Constraints       | Description
-──────────────────┼───────────────┼────────────────────┼───────────────────┼──────────────────
-id                | INT           | PK                 | AUTO_INCREMENT    | Line item ID
-order_id          | INT           | FK → orders.id     | NOT NULL          | Parent order
-product_id        | INT           | FK → products.id   | DEFAULT NULL      | Ordered product
-retailer_id       | INT           | FK → users.id      | DEFAULT NULL      | Product seller
-product_name      | VARCHAR(200)  |                    | DEFAULT NULL      | Snapshot of product name
-quantity          | INT           |                    | NOT NULL          | Units ordered
-unit_price        | DECIMAL(10,2) |                    | NOT NULL          | Price per unit at purchase
-discount_per_unit | DECIMAL(10,2) |                    | NOT NULL, DEFAULT 0 | Per-unit discount
-
-─── TABLE: cart ────────────────────────────────────────────────────────────────
-Column      | Type      | PK/FK             | Constraints               | Description
-────────────┼───────────┼───────────────────┼───────────────────────────┼──────────────────
-id          | INT       | PK                | AUTO_INCREMENT            | Cart item ID
-user_id     | INT       | FK → users.id     | NOT NULL                  | Cart owner
-product_id  | INT       | FK → products.id  | NOT NULL                  | Product in cart
-quantity    | INT       |                   | NOT NULL, DEFAULT 1       | Quantity added
-added_at    | TIMESTAMP |                   | NOT NULL                  | When added to cart
-updated_at  | TIMESTAMP |                   | NOT NULL                  | Last quantity change
-
-─── TABLE: wishlists ──────────────────────────────────────────────────────────
-Column               | Type          | PK/FK            | Constraints           | Description
-─────────────────────┼───────────────┼──────────────────┼───────────────────────┼──────────────────
-id                   | INT           | PK               | AUTO_INCREMENT        | Wishlist entry ID
-user_id              | INT           | FK → users.id    | NOT NULL              | Wishlist owner
-product_id           | INT           | FK → products.id | NOT NULL              | Wished product
-priority             | TINYINT       |                  | NOT NULL, DEFAULT 3   | 1-5 priority level
-target_price         | DECIMAL(10,2) |                  | DEFAULT NULL          | Desired price threshold
-notify_on_price_drop | TINYINT(1)    |                  | NOT NULL, DEFAULT 0   | Price alert enabled
-note                 | VARCHAR(255)  |                  | DEFAULT NULL          | Personal note
-added_at             | TIMESTAMP     |                  | NOT NULL              | Entry timestamp
-(CHECK constraint: priority BETWEEN 1 AND 5)
-
-─── TABLE: reviews ────────────────────────────────────────────────────────────
-Column               | Type         | PK/FK             | Constraints       | Description
-─────────────────────┼──────────────┼───────────────────┼───────────────────┼──────────────────
-id                   | INT          | PK                | AUTO_INCREMENT    | Review ID
-product_id           | INT          | FK → products.id  | NOT NULL          | Reviewed product
-user_id              | INT          | FK → users.id     | NOT NULL          | Author of review
-rating               | INT          |                   | NOT NULL          | Star rating (1-5)
-title                | VARCHAR(120) |                   | DEFAULT NULL      | Review headline
-comment              | TEXT         |                   | DEFAULT NULL      | Review body text
-is_verified_purchase | TINYINT(1)   |                   | NOT NULL, DEFAULT 0 | Verified buyer flag
-created_at           | TIMESTAMP    |                   | NOT NULL          | Review submission time
-(CHECK constraint: rating BETWEEN 1 AND 5)
-
-─── TABLE: ai_chat_history ────────────────────────────────────────────────────
-Column     | Type        | PK/FK         | Constraints       | Description
-───────────┼─────────────┼───────────────┼───────────────────┼──────────────────
-id         | INT         | PK            | AUTO_INCREMENT    | Chat record ID
-user_id    | INT         | FK → users.id | NOT NULL          | User who chatted
-role       | VARCHAR(20) |               | NOT NULL, DEFAULT 'customer' | User role context
-sender     | ENUM        |               | NOT NULL          | 'user' or 'bot'
-message    | TEXT        |               | NOT NULL          | Chat message content
-created_at | TIMESTAMP   |               | NOT NULL          | Message timestamp
-
-─── TABLE: notifications ──────────────────────────────────────────────────────
-Column     | Type         | PK/FK         | Constraints       | Description
-───────────┼──────────────┼───────────────┼───────────────────┼──────────────────
-id         | INT          | PK            | AUTO_INCREMENT    | Notification ID
-user_id    | INT          | FK → users.id | NOT NULL          | Recipient user
-message    | TEXT         |               | NOT NULL          | Notification content
-type       | VARCHAR(50)  |               | NOT NULL, DEFAULT 'info' | Type (order/promo/info)
-channel    | VARCHAR(30)  |               | NOT NULL, DEFAULT 'in_app' | Delivery channel
-action_url | VARCHAR(255) |               | DEFAULT NULL      | Link to relevant page
-is_read    | TINYINT(1)   |               | NOT NULL, DEFAULT 0 | Read status flag
-created_at | TIMESTAMP    |               | NOT NULL          | Notification timestamp
-
-─── TABLE: payments ───────────────────────────────────────────────────────────
-Column          | Type          | PK/FK            | Constraints       | Description
-────────────────┼───────────────┼──────────────────┼───────────────────┼──────────────────
-id              | INT           | PK               | AUTO_INCREMENT    | Payment record ID
-order_id        | INT           | FK → orders.id   | NOT NULL          | Associated order
-payment_method  | VARCHAR(30)   |                  | NOT NULL          | Method (card/cod/easypaisa)
-provider        | VARCHAR(40)   |                  | DEFAULT NULL      | Bank/provider name
-amount_paid     | DECIMAL(10,2) |                  | NOT NULL          | Amount transacted
-payment_status  | VARCHAR(20)   |                  | NOT NULL, DEFAULT 'pending' | Transaction status
-transaction_ref | VARCHAR(120)  |                  | DEFAULT NULL      | External transaction ID
-paid_at         | DATETIME      |                  | DEFAULT NULL      | Payment completion time
-created_at      | TIMESTAMP     |                  | NOT NULL          | Record creation time
-
-─── TABLE: shipments ──────────────────────────────────────────────────────────
-Column            | Type          | PK/FK            | Constraints       | Description
-──────────────────┼───────────────┼──────────────────┼───────────────────┼──────────────────
-id                | INT           | PK               | AUTO_INCREMENT    | Shipment record ID
-order_id          | INT           | FK → orders.id   | NOT NULL          | Associated order
-courier_name      | VARCHAR(80)   |                  | NOT NULL          | Courier company name
-tracking_number   | VARCHAR(120)  |                  | DEFAULT NULL      | Parcel tracking code
-shipment_status   | VARCHAR(20)   |                  | NOT NULL, DEFAULT 'pending' | Current shipment state
-shipped_at        | DATETIME      |                  | DEFAULT NULL      | When package shipped
-expected_delivery | DATETIME      |                  | DEFAULT NULL      | Estimated delivery date
-delivered_at      | DATETIME      |                  | DEFAULT NULL      | Actual delivery time
-shipping_cost     | DECIMAL(10,2) |                  | NOT NULL, DEFAULT 0 | Shipping fee charged
-created_at        | TIMESTAMP     |                  | NOT NULL          | Record creation time
-
-
-================================================================================
-8. VALIDATION QUERY (RUN AFTER IMPORT TO VERIFY ROW COUNTS)
-================================================================================
-SELECT 'users' AS table_name, COUNT(*) AS rows_count FROM users
-UNION ALL SELECT 'categories', COUNT(*) FROM categories
-UNION ALL SELECT 'products', COUNT(*) FROM products
-UNION ALL SELECT 'product_images', COUNT(*) FROM product_images
-UNION ALL SELECT 'discount_codes', COUNT(*) FROM discount_codes
-UNION ALL SELECT 'addresses', COUNT(*) FROM addresses
-UNION ALL SELECT 'orders', COUNT(*) FROM orders
-UNION ALL SELECT 'order_items', COUNT(*) FROM order_items
-UNION ALL SELECT 'cart', COUNT(*) FROM cart
-UNION ALL SELECT 'wishlists', COUNT(*) FROM wishlists
-UNION ALL SELECT 'reviews', COUNT(*) FROM reviews
-UNION ALL SELECT 'ai_chat_history', COUNT(*) FROM ai_chat_history
-UNION ALL SELECT 'notifications', COUNT(*) FROM notifications
-UNION ALL SELECT 'payments', COUNT(*) FROM payments
-UNION ALL SELECT 'shipments', COUNT(*) FROM shipments;
-
-Expected output:
-  users           15
-  categories      10
-  products        20
-  product_images  20
-  discount_codes  10
-  addresses       12
-  orders          12
-  order_items     24
-  cart            10
-  wishlists       12
-  reviews         15
-  ai_chat_history 10
-  notifications   12
-  payments        12
-  shipments       10
-
-Total: 204 rows across 15 tables.
-
-
-================================================================================
-9. MULTI-TABLE SANITY CHECK QUERY
-================================================================================
-SELECT o.id AS order_id, u.username AS customer, o.status,
-       SUM(oi.quantity * (oi.unit_price - oi.discount_per_unit)) AS computed_total
-FROM orders o
-JOIN users u ON u.id = o.customer_id
-JOIN order_items oi ON oi.order_id = o.id
-GROUP BY o.id, u.username, o.status
-ORDER BY o.id;
-
-
-================================================================================
-10. ERD DESCRIPTION (Visual diagram exported separately)
-================================================================================
-The ERD was created using draw.io and exported as a high-resolution PNG image.
-It shows:
-  - All 15 table names with column names
-  - PK annotations (underlined) and FK annotations (arrow notation)
-  - Cardinality: 1:N lines from parent to child tables
-  - M:N relationships shown via junction tables with double connections
-  - Color-coded: Core entities (blue), Junction tables (green), Support (gray)
-
-
-================================================================================
-END OF PHASE 1
-================================================================================
-
-
-
-
-
-
-
-
+when  i clcik board ship it doesnt show any option blank screen first write full ode according to the manual 
+Code Rush — Web Dev Track
+Time limit: 8 hours Theme: Real-time crisis ops, maps, and AI
+The scenario
+A major shipping chokepoint just got flagged as a high-risk red zone after sudden geopolitical
+instability and naval blockades. Fifteen commercial cargo ships are in transit through the area
+right now under uncertain conditions, and the global supply chain is already feeling it.
+You're building the command system that keeps the fleet visible, controllable, and alive: live ship
+tracking, role-based control between fleet command and ship captains, AI for distress calls,
+weather-aware rerouting, and alerts when ships drift into trouble.
+It's a lot. Build the core first.
+The numbers (fixed for grading)
+- Exactly 15 active ships
+- Ship updates come in at 1 Hz or faster
+- Ship state reaches everyone watching within 500ms, 95% of the time
+- Geofence breach alerts fire within 1 second of the boundary cross
+- Proximity warnings trigger when two ships get within 2 km
+- Adverse weather costs 30% extra fuel
+- At least 5 people can watch the same fleet at once without state going out of sync
+- Ships move smoothly between updates with no teleporting
+How ships move
+There's no real fleet out there sending data. You're writing the simulator yourself. Each of the 15
+ships is just state on your backend that gets advanced over time.
+Every ship has:
+- A current position (lat/lng)
+- A speed and heading
+- A destination port
+- Fuel remaining
+- Cargo
+- An operational status (normal, rerouting, distressed, stopped, etc.)
+
+Routing is your job. We don't bake routes into the fleet config. Each ship starts at a position
+and knows where it's going, but the path between them is something your system has to figure
+out. The path needs to stay in navigable water (a polygon we provide, so you don't have to deal
+with real coastline data) and avoid any restricted zones operators have drawn at runtime.
+Two things trigger a reroute:
+- A new zone is drawn that intersects the ship's current path. The ship's status flips to
+"rerouting," your routing logic computes a new path that avoids the zone (and any
+others), and the ship follows it. No operator approval needed because the goal is
+unambiguous.
+- The captain accepts a directive from Command that changes course (reroute to a
+different port, divert to a waypoint, hold position). The next tick's route computation picks
+up the change.
+Weather isn't a trigger by itself. Ships in bad weather pay the 30% fuel penalty and keep going.
+If Command wants a ship to avoid a storm, that's a regular reroute directive, and the routing
+logic will naturally pick a path around the worst of it.
+The routing algorithm itself is up to you. A* on a grid, visibility graph, naive "head toward
+destination and deflect when blocked" — all valid. We're testing the behavior, not the algorithm.
+A few edge cases to handle so your simulator doesn't get stuck:
+- If no valid path exists (zones fully box in the destination), the ship goes to "stranded"
+status and an alert fires
+- If a zone is drawn around a ship that's already inside it, fire the geofence breach alert
+and have the ship attempt to reroute out
+- If a ship doesn't have enough fuel to reach its destination on the new path, flag
+"insufficient fuel" status but let it keep going until it actually runs out
+Your backend runs a tick at 1 Hz or faster. On each tick:
+- Advance every ship along its current heading by (speed × tick duration)
+- Apply the 30% extra fuel burn when the ship is in adverse weather
+- Update each ship's status based on conditions (out of fuel, inside a zone, arrived, etc.)
+- Push the new state out to everyone watching
+The operational area is the Strait of Hormuz and surrounding waters — Persian Gulf to the
+west, Gulf of Oman to the east. We provide fleet.json with the bounding box, a simplified
+navigable water polygon, and the 15 starting ships with their destination ports. Every team
+grades on the same fleet.
+
+What you're building
+The map
+- Show all 15 ships on an interactive ocean map
+- From the Command interface, operators can draw and edit polygonal restricted zones at
+runtime. Captains see the zones on their map but can't add or modify them.
+- When a ship enters a restricted zone, fire an alert (visual and audible) and keep it active
+until someone acknowledges or resolves it
+- Clicking a ship shows its cargo, fuel, speed, destination, and operational status
+Real-time sync
+- Use a persistent connection like WebSocket. No polling.
+- Everyone connected sees the same fleet state
+- Interpolate ship movement between updates so motion looks continuous
+- Keep that interpolation physically plausible: respect a max speed, no position jumps
+Roles
+There are two interfaces:
+- Command sees the whole fleet, can issue directives to any ship, and is the only role that
+can draw or edit restricted zones
+- Captain is scoped to a single ship. Receives directives and responds with either
+ACCEPT (ship adopts the new course on the next tick) or ESCALATE_DISTRESS
+(sends a free-form distress message instead of complying, which the AI then processes
+for severity and impact)
+When command sends a directive, the relevant captain responds, and that response reaches
+everyone connected immediately.
+AI / NLP
+- Captains can type free-form distress messages
+- Your system pulls structured info out of those messages: severity, what's wrong,
+quantifiable impact like injury counts or damage estimates
+- That extracted data feeds into how alerts get prioritized and displayed across the system
+Weather and routing
+- Pull real weather data from Open-Meteo, Stormglass, or any service with a free tier
+- Apply the 30% fuel penalty whenever a ship is moving through adverse weather
+
+- When the routing logic computes a new path (for any reason), factor in current weather
+so the path avoids the worst of it
+- Tell us whether the ship can actually reach its destination on the fuel it has, given the
+path and conditions
+Proximity warnings
+- Continuously check pairs of ships
+- Warn when any two ships are within 2 km of each other
+- Run those warnings through the same alert pipeline as everything else
+Playback
+- Save state over time however you want: event log, periodic snapshots, ring buffer, your
+call
+- Build a timeline so users can scrub back through fleet positions and key events
+- Last hour of history at 30-second resolution is enough
+- We don't need full state reconstruction at arbitrary timestamps
+Running it
+- docker compose up should bring the whole system up
+- Document any API keys or environment variables in the README
+Bonuses
+Only worth touching once core is stable. Each is up to +5%, additive, capped at 110% total.
+These are tiebreakers, not a way to skip the core requirements.
+- Multiple route options on reroute. Generate a few candidate paths with different tradeoffs
+(faster but through bad weather, longer but safer, most fuel-efficient) and let the operator
+pick.
+- Ship-to-ship assistance. A ship in distress can request help from nearby ships in the fleet
+— fuel transfer, medical aid, escort, cargo offload — and the receiving captain accepts or
+declines.
+- Predictive alerts that fire before things go wrong, not after. "Ship will enter the new zone
+in 3 minutes." "Ship will run out of fuel 40 km short of port."
+- AI fleet advisor. Beyond reacting to distress messages, the AI proactively suggests
+actions to Command (which ship to reroute, where to consider drawing a zone, who
+could send aid) with reasoning the operator can accept or reject.
+
+Grading
+Criterion Weight
+Core functionality end-to-end, with consistent
+state across everyone connected
+
+60%
+
+AI / NLP integration depth 20%
+Geospatial accuracy and UI/UX 15%
+Code quality, structure, and understanding of
+the tech stack
+
+5%
+
+Ground rules
+- The system has to run end-to-end on a laptop. No reliance on cloud infra you can't
+reproduce during judging.
+- Hard-coded data is only acceptable where the spec explicitly allows it, like basemap
+tiles. Ship data, alerts, and AI outputs all have to be live.
+- If the spec didn't say something, document the assumption you made. Documented
+assumptions will be honored. Undocumented ones will be judged against the strictest
+reasonable interpretation.
+and 
+use database such htat 
+If you just use temporary memory (RAM) in your code, the moment your Replit server restarts, goes to sleep, or crashes, everything disappears. Based on the problem statement, here is exactly why a database is non-negotiable:1. The "Scrub Back" Playback RequirementThe judges explicitly require a playback feature so users can "scrub back through fleet positions and key events". You are required to "save state over time" (like taking periodic snapshots of where the ships are). You physically cannot build a history timeline without a database to store those past coordinates.  2. Multi-Player Sync & Restricted ZonesThe scenario dictates that "at least 5 people can watch the same fleet at once without state going out of sync". Additionally, the Command role will be drawing polygonal restricted zones on the map. If Command draws a zone, it must be saved to a database so that when a Captain logs in from a different laptop, their map pulls that exact same zone from the database and displays it.  3. Persistent Alerts & Distress CallsWhen Captains send "free-form distress messages," your AI extracts the data to prioritize alerts. The rules state that an alert must stay active "until someone acknowledges or resolves it". If you don't store these alerts in a database, a simple page refresh by the Command user would erase all active distress calls.
+
+and use supabase and also 
+n8n 
+https://beaniegame.app.n8n.cloud/webhook/distress-call
+
+this has a webhook node and a llm chain node which and System Architect Directive: n8n IntegrationContext:We have built two external automation and AI workflows in n8n. These workflows handle high-latency tasks (emails) and complex logic (NLP) so our core Node.js engine stays fast and lean.Task: Integrate the following two Webhook pipelines into the backend logic using fetch.1. Pipeline: Geofence Breach DispatcherPurpose: Sends emergency emails when ships enter restricted zones.URL: [PASTE_YOUR_WORKFLOW_1_PRODUCTION_URL_HERE]Trigger Logic: Whenever a ship's coordinates $(lat, lng)$ are found to be inside a restricted polygon, fire a POST request to this URL.Required Payload:JSON{
+  "shipName": "string",
+  "lat": "number",
+  "lng": "number",
+  "fuel": "number"
+}
+Note: This is an asynchronous "fire-and-forget" call. Do not block the physics engine waiting for a response.2. Pipeline: AI Distress AnalyzerPurpose: Uses a Groq-powered LLM to translate free-form captain messages into structured JSON for the UI.URL: [PASTE_YOUR_WORKFLOW_2_PRODUCTION_URL_HERE]Trigger Logic: Call this when a Captain submits a text message in the distress chat.Required Payload: {"message": "string"}Response Handling: This is a synchronous call. You must await the response. It will return:JSON{
+  "severity": 1-10,
+  "issue": "string",
+  "impact_quantified": "string"
+}
+Implementation: Use the returned severity to update the ship's status in the database/UI (e.g., if severity > 7, trigger the 'Critical Alert' state).Formatting Requirements:As per project s
+tandards, ensure all new helper files or updated logic files include the header
+
+https://beaniegame.app.n8n.cloud/webhook/geofence-alert
+
+this is for alert signals when evr ship eneter area accrofin to manual it sends mail 
+
+and also see the ui for fleet it is like simple dont add dark mode just make it look good and also the ships remain on land when scroled up also fixx that and dont give me text just do that and in steps 

@@ -653,9 +653,15 @@
           return renderMarkdown(String(payload || ''));
         }
 
-        const queryRan = (payload.query_ran || payload.query || '').trim();
-        const dbOutput = (payload.db_output || '').trim();
-        const answer = (payload.reply || payload.answer || payload.error || '').trim();
+        const queryRan = String(
+          payload.query_ran ?? payload.query ?? payload.queryRan ?? payload.sql ?? payload.sql_query ?? ''
+        ).trim();
+        const dbOutput = String(
+          payload.db_output ?? payload.dbOutput ?? payload.db ?? payload.output ?? ''
+        ).trim();
+        const answer = String(
+          payload.reply ?? payload.answer ?? payload.response ?? payload.error ?? ''
+        ).trim();
 
         if (!queryRan && !dbOutput) {
           return renderMarkdown(answer || 'No response.');
@@ -728,11 +734,7 @@
           });
           const data = await res.json();
           typing.remove();
-          appendMessage({
-            query_ran: data.query_ran,
-            db_output: data.db_output,
-            answer: data.reply || data.error || 'No response.'
-          }, 'bot');
+          appendMessage(data, 'bot');
           historyLoaded = true;
         } catch (err) {
           typing.remove();

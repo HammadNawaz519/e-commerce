@@ -569,7 +569,7 @@
       {% set steps = ['Placed','Processing','Shipped','Delivered'] %}
       <div class="timeline-container">
         <div class="timeline-line"></div>
-        <div class="timeline-progress" style="width: {{ (cur / 3) * 100 }}%;"></div>
+        <div class="timeline-progress" data-width="{{ (cur / 3) * 100 }}"></div>
         {% for step in steps %}
         {% set i = loop.index0 %}
         <div class="timeline-step {{ 'done' if i <= cur else '' }} {{ 'current' if i == cur else '' }}">
@@ -614,6 +614,10 @@
 
     <script>
       (() => {
+        document.querySelectorAll('.timeline-progress[data-width]').forEach(el => {
+          el.style.width = el.dataset.width + '%';
+        });
+
         const cards = Array.from(document.querySelectorAll('.order-card[data-order-id]'));
         if (!cards.length) return;
 

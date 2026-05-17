@@ -328,9 +328,15 @@ body[data-role="retailer"] #sage-send:hover { background: #1A1C23; }
       return renderMarkdown(String(payload || ''));
     }
 
-    const queryRan = (payload.query_ran || payload.query || '').trim();
-    const dbOutput = (payload.db_output || '').trim();
-    const answer = (payload.reply || payload.answer || payload.error || '').trim();
+    const queryRan = String(
+      payload.query_ran ?? payload.query ?? payload.queryRan ?? payload.sql ?? payload.sql_query ?? ''
+    ).trim();
+    const dbOutput = String(
+      payload.db_output ?? payload.dbOutput ?? payload.db ?? payload.output ?? ''
+    ).trim();
+    const answer = String(
+      payload.reply ?? payload.answer ?? payload.response ?? payload.error ?? ''
+    ).trim();
 
     if (!queryRan && !dbOutput) {
       return renderMarkdown(answer || 'No response.');

@@ -854,7 +854,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div class="rev-user">{{ rv.username }}</div>
             {% if rv.user_id == current_user_id %}
-            <button class="rm-btn" onclick="deleteReview({{ rv.id }})">Delete</button>
+            <button class="rm-btn" data-rid="{{ rv.id }}" onclick="deleteReviewFromData(this)">Delete</button>
             {% endif %}
           </div>
           <div class="rev-stars"><i class="ri-star-fill"></i> {{ rv.rating }}/5</div>
@@ -891,6 +891,7 @@
     function addToCartFromData(btn) { addToCart(btn.dataset.pid); }
     function toggleWishlistFromData(btn) { toggleWishlist(btn.dataset.pid); }
     function submitReviewFromData(btn) { submitReview(btn.dataset.pid); }
+    function deleteReviewFromData(btn) { deleteReview(btn.dataset.rid); }
 
     let selRating = 0;
     function chQty(d) { const i = document.getElementById('qtyInp'); i.value = Math.max(1, Math.min(parseInt(i.max) || 99, parseInt(i.value || 1) + d)); }

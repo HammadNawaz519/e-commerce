@@ -1806,11 +1806,14 @@ def _phase2_payload_needs_fallback(payload) -> bool:
         return True
     if db_output.startswith('pipeline error:'):
         return True
+    if 'discarded by security guard' in db_output or 'rejected query' in query_ran:
+        return True
 
     degraded_markers = [
         'could not complete the sql pipeline',
         'something went wrong while processing your question',
         'please rephrase your question in plain business terms',
+        'could not execute that request safely',
     ]
     return any(marker in answer for marker in degraded_markers)
 

@@ -11,6 +11,10 @@ import os as _os
 import random as _random
 import json
 
+_SAGE_QUALITY = (_os.getenv("SAGE_QUALITY") or "fast").strip().lower()
+if _SAGE_QUALITY not in ("fast", "medium"):
+    _SAGE_QUALITY = "fast"
+
 # ─────────────────────────────────────────────
 # IDENTITY
 # ─────────────────────────────────────────────
@@ -414,23 +418,39 @@ def _prepare_db_output(db_context: str, max_chars: int = 5000) -> str:
 # ─────────────────────────────────────────────
 # OPENROUTER CALL
 # ─────────────────────────────────────────────
-AI_MODELS = [
+_GROQ_MODEL_OVERRIDE = _os.getenv("GROQ_MODEL", "").strip()
+
+GROQ_MODELS_FAST = [
+    _GROQ_MODEL_OVERRIDE,
+    "llama-3.1-8b-instant",
+    "llama-3.1-70b-versatile",
+    "gemma2-9b-it",
+]
+
+GROQ_MODELS_MEDIUM = [
+    _GROQ_MODEL_OVERRIDE,
+    "llama-3.1-70b-versatile",
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
+]
+
+OPENROUTER_MODELS = [
     _os.getenv("OPENROUTER_MODEL", "").strip(),
-    "google/gemini-2.0-flash-exp:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/free",
     "openai/gpt-oss-120b:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "google/gemini-2.0-flash-exp:free",
 ]
 
 
-def _candidate_models(model: str | None) -> list[str]:
+def _candidate_models(model: str | None, fallbacks: list[str]) -> list[str]:
     """Return model list in priority order with duplicates removed."""
     if model and model.strip():
         return [model.strip()]
 
     ordered = []
     seen = set()
-    for m in AI_MODELS:
+    for m in fallbacks:
         m = (m or "").strip()
         if m and m not in seen:
             seen.add(m)
@@ -438,16 +458,77 @@ def _candidate_models(model: str | None) -> list[str]:
     return ordered
 
 
-def call_ai(messages: list, model: str = None) -> str:
-    """Call OpenRouter API using one key and model failover."""
+def _quality_tokens(fast_tokens: int, medium_tokens: int) -> int:
+    return medium_tokens if _SAGE_QUALITY == "medium" else fast_tokens
+
+
+def _call_groq(messages: list, model: str | None = None) -> tuple[str | None, str | None]:
+    """Call Groq OpenAI-compatible API if configured."""
+    import requests
+    api_key = (_os.getenv("GROQ_API_KEY", "") or "").strip()
+    if not api_key:
+        return None, None
+
+    last_error = None
+    fallbacks = GROQ_MODELS_MEDIUM if _SAGE_QUALITY == "medium" else GROQ_MODELS_FAST
+    for target_model in _candidate_models(model, fallbacks):
+        try:
+            resp = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model":       target_model,
+                    "messages":    messages,
+                    "max_tokens":  _quality_tokens(180, 360),
+                    "temperature": 0.4,
+                },
+                timeout=8,
+            )
+
+            if resp.status_code in (429, 500, 502, 503, 504):
+                last_error = f"{target_model} -> HTTP {resp.status_code}"
+                continue
+
+            resp.raise_for_status()
+            data = resp.json()
+
+            if "error" in data:
+                last_error = str(data["error"])
+                continue
+
+            choices = data.get("choices", [])
+            if not choices:
+                last_error = f"{target_model} returned no choices"
+                continue
+
+            raw = choices[0]["message"]["content"].strip()
+            import re as _re2
+            raw = _re2.sub(r"<think>.*?</think>", "", raw, flags=_re2.DOTALL).strip()
+            return (raw if raw else "I couldn't generate a response. Please try again."), None
+
+        except requests.exceptions.Timeout:
+            last_error = f"{target_model} timed out"
+            continue
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    return None, last_error
+
+
+def _call_openrouter(messages: list, model: str | None = None) -> tuple[str | None, str | None]:
+    """Call OpenRouter API if configured."""
     import requests
     # Normalize pasted keys that may include whitespace.
     api_key = (_os.getenv("OPENROUTER_API_KEY", "") or "").replace(" ", "").strip()
     if not api_key:
-        return "AI service is not configured. Please add OPENROUTER_API_KEY to your .env file."
+        return None, None
 
     last_error = None
-    for target_model in _candidate_models(model):
+    for target_model in _candidate_models(model, OPENROUTER_MODELS):
         try:
             resp = requests.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -460,10 +541,10 @@ def call_ai(messages: list, model: str = None) -> str:
                 json={
                     "model":       target_model,
                     "messages":    messages,
-                    "max_tokens":  600,
+                    "max_tokens":  _quality_tokens(180, 360),
                     "temperature": 0.4,
                 },
-                timeout=15,
+                timeout=8,
             )
 
             # Free model routes can be temporarily unavailable, rate-limited, or experience server issues.
@@ -485,11 +566,15 @@ def call_ai(messages: list, model: str = None) -> str:
                 last_error = f"{target_model} returned no choices"
                 continue
 
-            raw = choices[0]["message"]["content"].strip()
+            choice_msg = choices[0]["message"]
+            content = choice_msg.get("content")
+            if not content:
+                content = choice_msg.get("reasoning")
+            raw = str(content or "").strip()
             # Strip <think>...</think> reasoning blocks some models emit.
             import re as _re2
-            raw = _re2.sub(r'<think>.*?</think>', '', raw, flags=_re2.DOTALL).strip()
-            return raw if raw else "I couldn't generate a response. Please try again."
+            raw = _re2.sub(r"<think>.*?</think>", "", raw, flags=_re2.DOTALL).strip()
+            return (raw if raw else "I couldn't generate a response. Please try again."), None
 
         except requests.exceptions.Timeout:
             last_error = f"{target_model} timed out"
@@ -499,9 +584,24 @@ def call_ai(messages: list, model: str = None) -> str:
             last_error = str(e)
             continue
 
-    if last_error:
-        print(f"[Sage AI] All model attempts failed: {last_error}")
-    return "Sage is a bit busy right now. Please try again in a moment."
+    return None, last_error
+
+
+def call_ai(messages: list, model: str = None) -> str:
+    """Call Groq first (if configured), then OpenRouter as fallback."""
+    groq_result, groq_error = _call_groq(messages, model)
+    if groq_result:
+        return groq_result
+    if groq_error:
+        print(f"[Sage AI] Groq error: {groq_error}")
+
+    openrouter_result, openrouter_error = _call_openrouter(messages, model)
+    if openrouter_result:
+        return openrouter_result
+    if openrouter_error:
+        print(f"[Sage AI] All model attempts failed: {openrouter_error}")
+
+    return "AI service is not configured. Please add GROQ_API_KEY or OPENROUTER_API_KEY to your .env file."
 
 
 # ─────────────────────────────────────────────
