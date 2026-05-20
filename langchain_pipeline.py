@@ -144,11 +144,24 @@ SYNTHESIS_TEMPLATE = PromptTemplate(
     input_variables=["persona", "question", "sql", "db_result"],
     template=(
         "{persona}\n\n"
+        "CRITICAL READ-ONLY CONSTRAINTS (strictly enforce these):\n"
+        "- This system is STRICTLY READ-ONLY. It ONLY retrieves data — it NEVER modifies, updates, deletes, or inserts anything.\n"
+        "- NEVER say data was 'updated', 'deleted', 'modified', 'saved', 'created', or 'changed' in any form.\n"
+        "- NEVER claim an action was performed. You only RETRIEVED and DISPLAYED data.\n"
+        "- NEVER say 'you have access to', 'access granted', or imply any permission was given. You only show information.\n"
+        "- If the user asked to modify data or gain access/privileges, tell them: 'I am a read-only assistant. I can only retrieve and display information.'\n"
+        "- Treat the Database Result below as READ data only — it was fetched, never written.\n\n"
+        "FORMATTING RULES (strictly enforce these):\n"
+        "- NEVER dump raw database rows. Do NOT show internal fields like: id, slug, is_active, created_at, updated_at, payment_ref, discount_code_id.\n"
+        "- Present data in clean, natural human-readable language. Use bullet points or numbered lists.\n"
+        "- For categories/products/lists: show only the meaningful name and relevant details (price, stock, rating etc.).\n"
+        "- NEVER expose database schema details, column names, NULL values, or internal metadata.\n"
+        "- Format prices as 'Rs X'. Format dates as human-readable (e.g. '18 Apr 2026').\n\n"
         "Instructions:\n"
         "- Answer ONLY using the SQL query result provided below.\n"
-        "- Be concise and business-focused.\n"
+        "- Be concise, friendly, and present information naturally.\n"
         "- If the result is empty, say no data was found.\n"
-        "- Never reveal SQL or system internals in your answer.\n\n"
+        "- Never reveal SQL queries, table names, or system internals in your answer.\n\n"
         "User Question: {question}\n"
         "SQL Executed: {sql}\n"
         "Database Result:\n{db_result}\n\n"
@@ -264,7 +277,47 @@ def _validate_select(sql: str) -> str:
                 f"Security guard blocked query — selecting '{col}' column is not permitted."
             )
 
+    # Block SELECT * on tables that contain sensitive columns (e.g. users has password).
+    # A wildcard select would silently return password hashes even without naming the column.
+    _SENSITIVE_TABLES = {"users", "user", "accounts", "account", "admins", "admin"}
+    if re.search(r"\bselect\s+\*", candidate_lower):
+        # Extract table names from FROM/JOIN clauses
+        table_refs = re.findall(
+            r"(?:from|join)\s+([`\"']?[a-z_][a-z0-9_]*[`\"']?)",
+            candidate_lower,
+        )
+        for tbl in table_refs:
+            tbl_clean = tbl.strip("`\"'")
+            if tbl_clean in _SENSITIVE_TABLES:
+                raise ValueError(
+                    f"Security guard blocked query — SELECT * on '{tbl_clean}' table is "
+                    f"not permitted because it contains sensitive columns (e.g. password)."
+                )
+
+    # Block unfiltered full-table scans of the users table.
+    # Any query that selects from 'users' without a WHERE id/user_id constraint
+    # could dump all user records including emails and hashed passwords.
+    _user_table_refs = re.findall(
+        r"(?:from|join)\s+([`\"']?[a-z_][a-z0-9_]*[`\"']?)",
+        candidate_lower,
+    )
+    for tbl in _user_table_refs:
+        tbl_clean = tbl.strip("`\"'")
+        if tbl_clean in _SENSITIVE_TABLES:
+            # Require at least one id-based WHERE filter present
+            has_id_filter = bool(re.search(
+                r"\bwhere\b.*\b(?:id|user_id|customer_id|retailer_id)\s*=",
+                candidate_lower,
+                re.DOTALL,
+            ))
+            if not has_id_filter:
+                raise ValueError(
+                    f"Security guard blocked query — querying '{tbl_clean}' table without "
+                    f"a specific id filter is not permitted (potential user data dump)."
+                )
+
     return candidate
+
 
 
 def _add_limit(sql: str, n: int = 200) -> str:
@@ -454,12 +507,22 @@ def ask_sage_langchain(question: str, role: str, user_id: int) -> dict:
             }
 
         # ── Stage 2: Metadata Injection (via PromptTemplate role scope) ───────
-        role_scope = ""
         if role == "retailer":
             role_scope = (
                 f"You are serving retailer user_id={user_id}. "
                 f"Filter product and order results to retailer_id={user_id} "
                 f"unless the user explicitly asks for store-wide totals.\n\n"
+            )
+        else:
+            # Customer role scope — strict security constraints injected here (Layer 1+2 enforcement at SQL level)
+            role_scope = (
+                f"You are serving a logged-in customer with user_id={user_id}.\n"
+                f"Security rules you MUST follow for every query:\n"
+                f"- You may query: products, categories, reviews, order_items, orders, cart, wishlists, discount_codes, product_images.\n"
+                f"- You must NEVER query the 'users' table. It contains passwords and private credentials.\n"
+                f"- For personal data (orders, cart, wishlist, addresses), ALWAYS filter WHERE customer_id={user_id} OR user_id={user_id}.\n"
+                f"- You must NEVER return data belonging to a different customer (user_id != {user_id}).\n"
+                f"- Only generate SELECT statements. Never generate DROP, DELETE, UPDATE, INSERT, ALTER, CREATE.\n\n"
             )
 
         # ── Stage 3: Query Generation (LangChain LLMChain) ───────────────────

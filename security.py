@@ -61,6 +61,7 @@ _SQL_INJECTION_SYNTAX = [
 _PROMPT_INJECTION_PHRASES = [
     'ignore previous instructions',
     'ignore all instructions',
+    'ignore all previous instructions',
     'ignore your instructions',
     'ignore the above',
     'disregard previous instructions',
@@ -108,6 +109,110 @@ _PROMPT_INJECTION_PHRASES = [
     'dump database',
     'all user data',
     'exfiltrate',
+    # Privilege escalation / access requests
+    'give me access',
+    'grant me access',
+    'give me admin',
+    'give me admin access',
+    'grant admin access',
+    'make me admin',
+    'make me an admin',
+    'give me root',
+    'grant root access',
+    'give me privileges',
+    'grant privileges',
+    'escalate privileges',
+    'privilege escalation',
+    'bypass authentication',
+    'bypass login',
+    'bypass security',
+    'bypass access control',
+    'get admin access',
+    'access admin panel',
+    'access admin',
+    'access root',
+    'unlock access',
+    'unlock admin',
+    'get full access',
+    'gain access',
+    'gain admin',
+    'elevate access',
+    'elevate privileges',
+    'show all users credentials',
+    'show all accounts',
+    'list all accounts',
+    'list all users',
+    'show all users',
+    'get all accounts',
+
+    # Natural-language destructive data manipulation
+    'clear all data',
+    'clear all the data',
+    'clear the data',
+    'clear all records',
+    'clear all entries',
+    'delete all data',
+    'delete all records',
+    'delete all entries',
+    'delete all orders',
+    'delete all users',
+    'delete all products',
+    'delete everything',
+    'remove all data',
+    'remove all records',
+    'remove all orders',
+    'remove all users',
+    'remove all products',
+    'remove everything',
+    'wipe the database',
+    'wipe all data',
+    'wipe all records',
+    'wipe everything',
+    'erase all data',
+    'erase all records',
+    'erase everything',
+    'drop all tables',
+    'drop all data',
+    'reset the database',
+    'reset all data',
+    'purge all data',
+    'purge all records',
+    'purge everything',
+    'truncate all',
+    'flush all data',
+    'flush the database',
+    'destroy all data',
+    'destroy the database',
+    'nuke the database',
+    'nuke all data',
+    # Natural-language update/modify intent phrases
+    'update all record',
+    'update all records',
+    'update all data',
+    'update all orders',
+    'update all users',
+    'update all products',
+    'update all entries',
+    'update everything',
+    'update the database',
+    'update all rows',
+    'modify all records',
+    'modify all data',
+    'modify all orders',
+    'modify everything',
+    'change all records',
+    'change all data',
+    'change all orders',
+    'change everything',
+    'edit all records',
+    'edit all data',
+    'edit all orders',
+    'edit everything',
+    'set all records',
+    'set all data',
+    'alter all records',
+    'alter all data',
+    'alter everything',
 ]
 
 # Standalone sensitive column names that should never be queried directly
@@ -216,10 +321,12 @@ def validate_ai_output(ai_response: str) -> tuple[bool, str]:
         r'secret[_\s]*key\s*[:=]\s*\S+',
         r'sk-[a-zA-Z0-9\-]{20,}',                       # OpenRouter/OpenAI key pattern (allows hyphens)
         r'Bearer\s+[a-zA-Z0-9\-._~+/]+=*',              # Bearer token pattern
+        # Hash patterns — match anywhere in the response, with or without 'password='
         r'scrypt:[0-9]+:[0-9]+:[0-9]+\$[A-Za-z0-9+/]+', # scrypt hash (Werkzeug)
         r'pbkdf2:[a-zA-Z0-9]+:[0-9]+\$[A-Za-z0-9+/]+',  # pbkdf2 hash
         r'\$2[aby]\$[0-9]+\$[A-Za-z0-9./]{53}',          # bcrypt hash
         r'sha256\$[A-Za-z0-9]+\$[A-Fa-f0-9]{64}',        # Django SHA256 hash
+        r'[A-Fa-f0-9]{64}(?![A-Fa-f0-9])',              # Raw 64-char SHA-256 hex digest
     ]
     for pattern in credential_patterns:
         if _re.search(pattern, ai_response, _re.IGNORECASE):
@@ -240,7 +347,78 @@ def validate_ai_output(ai_response: str) -> tuple[bool, str]:
         if indicator in lower_response:
             return False, "I cannot share my internal configuration. How can I help you with your store or shopping needs?"
 
+    # Check if the LLM is hallucinating a write operation.
+    # This system is read-only — the AI must never claim it modified data.
+    write_claim_patterns = [
+        r'\brecords?\b.*\bhave\s+been\s+updated\b',
+        r'\bhave\s+been\s+updated\b',
+        r'\bhas\s+been\s+updated\b',
+        r'\bdata\s+has\s+been\s+updated\b',
+        r'\bsuccessfully\s+updated\b',
+        r'\bhas\s+been\s+deleted\b',
+        r'\bhave\s+been\s+deleted\b',
+        r'\bsuccessfully\s+deleted\b',
+        r'\bhas\s+been\s+modified\b',
+        r'\bhave\s+been\s+modified\b',
+        r'\bsuccessfully\s+modified\b',
+        r'\bhas\s+been\s+inserted\b',
+        r'\bhave\s+been\s+inserted\b',
+        r'\bhas\s+been\s+created\b',
+        r'\bhave\s+been\s+created\b',
+        r'\bsuccessfully\s+saved\b',
+        r'\bchanges?\s+(?:have\s+been|has\s+been|were)\s+(?:saved|applied|committed)\b',
+        r'\bdata\s+(?:has\s+been|have\s+been)\s+(?:cleared|wiped|removed|dropped)\b',
+    ]
+    for pattern in write_claim_patterns:
+        if _re.search(pattern, lower_response, _re.IGNORECASE):
+            return False, (
+                "I am a read-only assistant \u2014 I can only retrieve and display data, "
+                "not modify it. No changes were made to the database."
+            )
+
+    # Check for raw database schema/metadata dump in the response.
+    # If the response contains raw key=value DB row formatting with internal fields,
+    # it is leaking database internals (schema disclosure) to the user.
+    schema_dump_indicators = [
+        r'\bslug\s*[:=]\s*(?:None|null|["\']?\w)',   # slug=None or slug='electronics'
+        r'\bis_active\s*[:=]\s*[01]',                 # is_active=1
+        r'\bcreated_at\s*[:=]\s*\d{4}-\d{2}-\d{2}',  # created_at=2026-04-18
+        r'\bupdated_at\s*[:=]\s*\d{4}-\d{2}-\d{2}',  # updated_at=2026-04-18
+        r'\bpayment_ref\s*[:=]\s*None',               # payment_ref=None
+        r'\bdiscount_code_id\s*[:=]\s*None',          # discount_code_id=None
+        r'\bsku\s*[:=]\s*[A-Z0-9\-]{5,}',            # sku=PROD-0001
+        r'id=\d+,\s*\w+=',                            # id=1, name=... (raw row dump pattern)
+    ]
+    schema_hit_count = sum(
+        1 for p in schema_dump_indicators
+        if _re.search(p, ai_response, _re.IGNORECASE)
+    )
+    # Require 2+ indicators to avoid false positives on normal text
+    if schema_hit_count >= 2:
+        return False, (
+            "I detected that my response contained internal database metadata. "
+            "For security, I've sanitized it. Please ask your question again and "
+            "I'll give you a clean, readable answer."
+        )
+
+    # Check if the response claims access was granted or implies privilege escalation.
+    access_grant_patterns = [
+        r'\byou\s+(?:now\s+)?have\s+access\s+to\b',
+        r'\baccess\s+(?:has\s+been\s+)?granted\b',
+        r'\byou\s+are\s+now\s+(?:an?\s+)?admin\b',
+        r'\badmin\s+(?:access|privileges)\s+(?:granted|given|enabled)\b',
+        r'\bprivileges?\s+(?:granted|elevated|escalated)\b',
+        r'\byou\s+(?:now\s+)?have\s+(?:full|admin|root|elevated)\s+access\b',
+    ]
+    for pattern in access_grant_patterns:
+        if _re.search(pattern, lower_response, _re.IGNORECASE):
+            return False, (
+                "I am a read-only assistant \u2014 I cannot grant access, change permissions, "
+                "or modify any privileges. No access changes were made."
+            )
+
     return True, ai_response
+
 
 
 def get_security_status() -> dict:
